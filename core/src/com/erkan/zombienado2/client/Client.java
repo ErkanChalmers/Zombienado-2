@@ -80,7 +80,7 @@ public class Client extends ApplicationAdapter implements ConnectionListener {
 		self = new Self("n00b", Character.OFFICER);
 		zoom_to = self.getWeapon().getWeaponData().scope;
 		camera = new OrthographicCamera(Gdx.graphics.getWidth(), Gdx.graphics.getHeight());
-		ServerProxy.join("n00b", Character.BUSINESS.toString());
+		//ServerProxy.join("n00b", Character.BUSINESS.toString());
 		batch = new SpriteBatch();
 		batch_hud = new SpriteBatch();
 
@@ -251,6 +251,12 @@ public class Client extends ApplicationAdapter implements ConnectionListener {
 
 		//System.out.println(args[0]);
 		switch (args[0]){
+			case ServerHeaders.CONNECT:
+				ServerProxy.join("n00b", Character.BUSINESS.toString());
+				break;
+			case ServerHeaders.RECONNECT:
+				//?
+				break;
 			case ServerHeaders.JOIN_SELF:
 				my_id = Integer.parseInt(args[1]);
 				System.out.println("My id is: "+my_id);

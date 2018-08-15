@@ -14,6 +14,8 @@ import java.net.ServerSocket;
  * Created by Erik on 2018-07-29.
  */
 public class ConnectionManager {
+    static Object lock = new Object();
+
     static ConnectionListener cl = null;
     static ServerSocket socket;
     static List<Socket> clients = new ArrayList<>();
@@ -41,24 +43,30 @@ public class ConnectionManager {
                 int identifier = connected;
                 connected++;
 
+                send(identifier, "CONNECT");
                 send(identifier, "Identifier: "+identifier);
+                listen(newConnection, identifier);
 
-                new Thread(()->{
-                    try {
-                        BufferedReader reader = new BufferedReader(new InputStreamReader(newConnection.getInputStream()));
-                        String msg = "";
-                        while ((msg = reader.readLine()) != null){
-                            cl.onMsgReceive(identifier, msg);
-                        }
-                    } catch (IOException e) {
-                        e.printStackTrace();
-                    }
-                }).start();
             } catch (IOException e) {
                 e.printStackTrace();
             }
         }
 
+    }
+
+    public static void listen(Socket socket, int identifier){
+        new Thread(()->{
+            BufferedReader reader = null;
+            try {
+                reader = new BufferedReader(new InputStreamReader(socket.getInputStream()));
+                String msg = "";
+                while ((msg = reader.readLine()) != null){
+                    cl.onMsgReceive(identifier, msg);
+                }
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }).start();
     }
 
     public static void broadcast(Object... args) {
@@ -71,12 +79,17 @@ public class ConnectionManager {
 
     public static void broadcast(String msg){
         msg = msg +"\n";
-        for (Socket socket:clients) {
-            try {
-                socket.getOutputStream().write(msg.getBytes());
-                socket.getOutputStream().flush();
-            } catch (IOException e) {
-                e.printStackTrace();
+        synchronized (lock) {
+            for (Socket socket : clients) {
+                if (socket == null)
+                    continue;
+                try {
+                    socket.getOutputStream().write(msg.getBytes());
+                    socket.getOutputStream().flush();
+                } catch (IOException e) {
+                    reset(socket);
+                    e.printStackTrace();
+                }
             }
         }
     }
@@ -89,5 +102,33 @@ public class ConnectionManager {
         } catch (IOException e) {
             e.printStackTrace();
         }
+    }
+
+    private static void reset(Socket socket){
+        System.out.println("reset1");
+            try {
+                socket.getOutputStream().flush();
+                socket.getOutputStream().close();
+                socket.close();
+            } catch (IOException ioex) {
+                ioex.printStackTrace();
+            }
+
+            int identifier = clients.indexOf(socket);
+            clients.set(identifier, null);
+
+            new Thread(() -> {
+                try {
+                    System.out.println("awaiting reconnect...");
+                    clients.set(identifier, ConnectionManager.socket.accept());
+                    send(identifier, "RECONNECT");
+                    send(identifier, "Identifier: " + identifier + "");
+                    cl.reconnect(identifier, socket);
+                    listen(clients.get(identifier), identifier);
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+            }).start();
+
     }
 }

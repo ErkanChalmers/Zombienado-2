@@ -10,6 +10,7 @@ import com.erkan.zombienado2.server.misc.FilterConstants;
 import com.erkan.zombienado2.server.networking.ConnectionListener;
 import com.erkan.zombienado2.server.networking.ConnectionManager;
 
+import java.net.Socket;
 import java.util.*;
 
 /**
@@ -98,6 +99,15 @@ public class Server implements ConnectionListener, ContactListener {
                     players[identifier].weapon = new WeaponModel(WeaponData.getWeapon(arguments[1]));
                 }
                 break;
+        }
+    }
+
+    @Override
+    public void reconnect(int identifier, Socket socket) {
+        ConnectionManager.send(identifier, ServerHeaders.JOIN_SELF + " " + identifier + " " + CLIENTS_TO_ACCEPT);
+        for (int i = 0; i < players.length; i++) {
+            PlayerModel player = players[i];
+            ConnectionManager.send(identifier, ServerHeaders.JOIN_PLAYER +" " + i+" "+ player.name+ " " + player.character);
         }
     }
 
