@@ -252,7 +252,7 @@ public class Client extends ApplicationAdapter implements ConnectionListener {
 		//System.out.println(args[0]);
 		switch (args[0]){
 			case ServerHeaders.CONNECT:
-				ServerProxy.join("n00b", Character.BUSINESS.toString());
+				ServerProxy.join(self.getName(), Character.BUSINESS.toString());
 				break;
 			case ServerHeaders.RECONNECT:
 				//?

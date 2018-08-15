@@ -59,6 +59,10 @@ public abstract class Player {
         muzzle_elumination = PhysicsHandler.createPointLight(to_screen_space(position.x), to_screen_space(position.y), new Color(1,1,0,1f), 400);
     }
 
+    public String getName(){
+        return name;
+    }
+
     //must be done from GL context
     private void init(){
         muzzle_animation = new Animation<TextureRegion>(1f/30f, Weapon.muzzleflash_arraay);

@@ -7,12 +7,12 @@ import com.erkan.zombienado2.server.Server;
 
 public class DesktopLauncher {
 	public static void main (String[] arg) {
-
+/*
 		System.out.println("Launcher: creating server");
 		new Thread(()-> {
 			new Server(9021, 1);
 		}).start();
-
+*/
 		System.out.println("Launcher: creating client");
 		LwjglApplicationConfiguration client_configuration = new LwjglApplicationConfiguration();
 		client_configuration.title = "Zombienado 2";
@@ -20,7 +20,7 @@ public class DesktopLauncher {
 		client_configuration.height = 1080;
 		client_configuration.samples = 3;
 		//"192.168.1.196"
-		new LwjglApplication(new Client("127.0.0.1", 9021), client_configuration);
+		new LwjglApplication(new Client("192.168.1.168", 9021), client_configuration);
 
 	}
 
