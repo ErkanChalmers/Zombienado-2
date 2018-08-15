@@ -41,6 +41,7 @@ public class Client extends ApplicationAdapter implements ConnectionListener {
 	List<Zombie> zombies = new ArrayList<>();
 	int current_wave = 0;
 
+	boolean started = false;
 
 	BitmapFont font;
 	SpriteBatch batch;
@@ -62,9 +63,12 @@ public class Client extends ApplicationAdapter implements ConnectionListener {
 
 	Vector2[][] bullets = new Vector2[0][0];
 
+	final String IP;
+	final int PORT;
+
 	public Client(final String IP, final int PORT){
-		ServerProxy.addListener(this);
-		ServerProxy.connect(IP, PORT);
+		this.IP = IP;
+		this.PORT = PORT;
 	}
 
 	@Override
@@ -80,7 +84,6 @@ public class Client extends ApplicationAdapter implements ConnectionListener {
 		self = new Self("n00b", Character.OFFICER);
 		zoom_to = self.getWeapon().getWeaponData().scope;
 		camera = new OrthographicCamera(Gdx.graphics.getWidth(), Gdx.graphics.getHeight());
-		//ServerProxy.join("n00b", Character.BUSINESS.toString());
 		batch = new SpriteBatch();
 		batch_hud = new SpriteBatch();
 
@@ -95,12 +98,17 @@ public class Client extends ApplicationAdapter implements ConnectionListener {
 			PhysicsHandler.createPrefab(structure.getFirst());
 			structures.add(new Structure(structure.getFirst(), structure.getSecond()));
 		});
+
+		ServerProxy.addListener(this);
+		ServerProxy.connect(IP, PORT);
 	}
 
 	float testAngle = 0;
 
 	@Override
 	public synchronized void render () {
+		if (!started)
+			return;
 		//TEST
 		testAngle+=10;
 		test1.setDirection(testAngle);
@@ -261,6 +269,7 @@ public class Client extends ApplicationAdapter implements ConnectionListener {
 				my_id = Integer.parseInt(args[1]);
 				System.out.println("My id is: "+my_id);
 				teamMates = new TeamMate[Integer.parseInt(args[2])];
+				started = true;
 				break;
 			case ServerHeaders.JOIN_PLAYER:
 			{
