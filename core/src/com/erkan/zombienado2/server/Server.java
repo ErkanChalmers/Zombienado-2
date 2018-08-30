@@ -3,6 +3,8 @@ package com.erkan.zombienado2.server;
 import com.badlogic.gdx.math.MathUtils;
 import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.physics.box2d.*;
+import com.badlogic.gdx.physics.box2d.World;
+import com.erkan.zombienado2.client.world.*;
 import com.erkan.zombienado2.data.world.Map;
 import com.erkan.zombienado2.data.weapons.WeaponData;
 import com.erkan.zombienado2.networking.ServerHeaders;
@@ -38,6 +40,12 @@ public class Server implements ConnectionListener, ContactListener {
         World world = new World(new Vector2(0, 0), false);
         WorldManager.setWorld(world, this);
         Map.TEST_MAP.getStructures().stream().forEach(structure -> WorldManager.createPrefab(structure.getFirst()));
+        Map.TEST_MAP.getBoundaries().stream().forEach(wall -> WorldManager.createWall(wall.getFirst()));
+        Map.TEST_MAP.get_all_objects().stream().forEach(obj -> {
+            if (obj instanceof Solid){
+                WorldManager.createRect(((Solid)obj).getBounds());
+            }
+        });
 
         //has to be done last i think, because context need to be initialized (eg world)
         ConnectionManager.init(this, PORT);
@@ -102,6 +110,11 @@ public class Server implements ConnectionListener, ContactListener {
         }
     }
 
+    /**
+     * Only if connection reset, and client rejoins
+     * @param identifier
+     * @param socket
+     */
     @Override
     public void reconnect(int identifier, Socket socket) {
         ConnectionManager.send(identifier, ServerHeaders.JOIN_SELF + " " + identifier + " " + CLIENTS_TO_ACCEPT);
@@ -113,6 +126,7 @@ public class Server implements ConnectionListener, ContactListener {
 
     public void createPlayer(String name, String character, int identifier){
         players[identifier] = new PlayerModel(name, character);
+        players[identifier].body.setTransform(5f,5f, 0f);
         ConnectionManager.send(identifier, ServerHeaders.JOIN_SELF +" " + identifier + " "+ CLIENTS_TO_ACCEPT);
         for (int i = 0; i < players.length; i++){
             if (players[i] == null)
@@ -175,7 +189,7 @@ public class Server implements ConnectionListener, ContactListener {
 
         for (int i = 0; i < players.length; i++) {
             PlayerModel player = players[i];
-            ConnectionManager.broadcast(ServerHeaders.UPDATE_PLAYER, i, player.body.getPosition().x, player.body.getPosition().y, player.rotation, player.weapon.getWeaponData().toString());
+            ConnectionManager.broadcast(ServerHeaders.UPDATE_PLAYER, i, player.body.getPosition().x, player.body.getPosition().y, player.rotation, player.getHealth(), player.weapon.getWeaponData().toString());
         }
 
 
@@ -208,7 +222,8 @@ public class Server implements ConnectionListener, ContactListener {
 
             if (zombies.size() < wave_size && zombie_spawn_accumulator > spawn_rate) {
                 zombie_spawn_accumulator -= spawn_rate;
-                zombies.add(new Zombie(MathUtils.random(-10f, 10f), MathUtils.random(-10f, 10f), max_health));
+                Vector2 spawnpos = Map.TEST_MAP.getRandomSpawnpoint();
+                zombies.add(new Zombie(spawnpos.x, spawnpos.y, max_health));
             }
 
             boolean all_dead = zombies.size() == wave_size;
@@ -218,12 +233,12 @@ public class Server implements ConnectionListener, ContactListener {
 
             while (zombie_iterator.hasNext()) {
                 Zombie zombie = zombie_iterator.next();
-                zombie.update();
+                zombie.update(STEP_TIME);
                 if (zombie.updateDirection()) {
                     Vector2 shortest_distance = new Vector2(9999, 9999);
                     for (PlayerModel player : players) {
-                        Vector2 pp = player.body.getPosition();
-                        Vector2 zp = zombie.getPosition();
+                        Vector2 pp = player.body.getPosition().cpy();
+                        Vector2 zp = zombie.getPosition().cpy();
                         Vector2 dist = pp.sub(zp);
                         if (dist.len() < shortest_distance.len()) {
                             shortest_distance = dist;
@@ -231,15 +246,16 @@ public class Server implements ConnectionListener, ContactListener {
                     }
                     //TODO: set position instead of direction!
                     if (zombie.getBehavior().equals(Zombie.Behavior.Hunting) && shortest_distance.len() < Zombie.HUNT_RANGE || shortest_distance.len() < Zombie.AGRO_RANGE) {
-                        zombie.setDirection(shortest_distance.setLength(1));
                         zombie.setBehavior(Zombie.Behavior.Hunting);
+
+                        zombie.setDirection(shortest_distance.setLength(1));
                     } else {
                         if (MathUtils.randomBoolean(.1f)){
-                            zombie.setDirection(new Vector2(0, 0));
                             zombie.setBehavior(Zombie.Behavior.Standing);
+                            zombie.setDirection(new Vector2(0, 0));
                         } else {
-                            zombie.setDirection(new Vector2(MathUtils.random(-1f, 1f), MathUtils.random(-1f, 1f)).setLength(1));
                             zombie.setBehavior(Zombie.Behavior.Roaming);
+                            zombie.setDirection(new Vector2().setToRandomDirection());
                         }
                     }
                 }
@@ -335,7 +351,8 @@ public class Server implements ConnectionListener, ContactListener {
             if (contact.getFixtureB().getFilterData().categoryBits == FilterConstants.PLAYER_FIXTURE){
                 Zombie zombie = (Zombie)contact.getFixtureA().getBody().getUserData();
                 if (zombie.attack_finished()){
-
+                    PlayerModel player = (PlayerModel)contact.getFixtureB().getBody().getUserData();
+                    player.inflict_damage(3f);
                 }
                 zombie.setAttacking();
             }
@@ -345,7 +362,8 @@ public class Server implements ConnectionListener, ContactListener {
             if (contact.getFixtureA().getFilterData().categoryBits == FilterConstants.PLAYER_FIXTURE){
                 Zombie zombie = (Zombie)contact.getFixtureB().getBody().getUserData();
                 if (zombie.attack_finished()){
-
+                    PlayerModel player = (PlayerModel)contact.getFixtureA().getBody().getUserData();
+                    player.inflict_damage(3f);
                 }
                 zombie.setAttacking();
             }

@@ -14,29 +14,30 @@ import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.math.MathUtils;
 import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.math.Vector3;
-import com.badlogic.gdx.physics.box2d.Box2DDebugRenderer;
-import com.erkan.zombienado2.client.world.BrokenLamp;
+import com.badlogic.gdx.physics.box2d.*;
+import com.erkan.zombienado2.client.world.*;
+import com.erkan.zombienado2.client.world.World;
 import com.erkan.zombienado2.data.world.Map;
-import com.erkan.zombienado2.client.world.Structure;
 import com.erkan.zombienado2.graphics.Transform;
 import com.erkan.zombienado2.client.networking.ConnectionListener;
 import com.erkan.zombienado2.client.networking.ServerProxy;
 import com.erkan.zombienado2.data.weapons.WeaponData;
 import com.erkan.zombienado2.networking.ServerHeaders;
 import com.badlogic.gdx.graphics.Texture;
+import com.erkan.zombienado2.server.misc.FilterConstants;
 
 import java.util.*;
 import java.util.ArrayList;
 
 import static com.erkan.zombienado2.graphics.Transform.*;
 
-public class Client extends ApplicationAdapter implements ConnectionListener {
+public class Client extends ApplicationAdapter implements ConnectionListener, JoinGameListener, ContactListener {
 	Texture ground;
-	ConeLight test1;
-	ConeLight test2;
-	BrokenLamp bl;
-	List<Structure> structures = new ArrayList();
+	World world;
+
 	Sound music;
+
+	MainMenu mainMenu;
 
 	List<Zombie> zombies = new ArrayList<>();
 	int current_wave = 0;
@@ -58,27 +59,28 @@ public class Client extends ApplicationAdapter implements ConnectionListener {
 
 	float zoom = 1f;
 	float zoom_to = 1f;
+	float effect_magnification = 1f;
 
 	TeamMate[] teamMates;
 
 	Vector2[][] bullets = new Vector2[0][0];
 
-	final String IP;
-	final int PORT;
-
-	public Client(final String IP, final int PORT){
-		this.IP = IP;
-		this.PORT = PORT;
+	@Override
+	public void join(String IP, int PORT) {
+		ServerProxy.addListener(this);
+		ServerProxy.connect(IP, PORT);
 	}
 
 	@Override
 	public void create () {
+		mainMenu = new MainMenu(this);
+		world = new World();
 		Weapon.init();
  		ground = new Texture("misc/test_ground.png");
  		ground.setFilter(Texture.TextureFilter.Linear, Texture.TextureFilter.Linear);
 
  		Zombie.init();
-		PhysicsHandler.init();
+		PhysicsHandler.init(this);
 		dDebugRenderer = new Box2DDebugRenderer();
 		font = new BitmapFont();
 		self = new Self("n00b", Character.OFFICER);
@@ -87,48 +89,65 @@ public class Client extends ApplicationAdapter implements ConnectionListener {
 		batch = new SpriteBatch();
 		batch_hud = new SpriteBatch();
 
-		test1 = PhysicsHandler.createConeLight(to_screen_space(18.7f), to_screen_space(5.9f), new Color(1,0,0,1), 200, testAngle, 40);
-		test2 = PhysicsHandler.createConeLight(to_screen_space(18.7f), to_screen_space(5.9f), new Color(0,0,1,1), 200, testAngle + 180, 40);
-		bl = new BrokenLamp(15, -5, 95);
 		music = Gdx.audio.newSound(Gdx.files.internal("audio/music.mp3"));
 		music.loop();
 		music.play(.01f);
 
+
+
+
+
 		Map.TEST_MAP.getStructures().stream().forEach(structure -> {
-			PhysicsHandler.createPrefab(structure.getFirst());
-			structures.add(new Structure(structure.getFirst(), structure.getSecond()));
+			world.add(new Structure(structure.getFirst(), structure.getSecond()));
 		});
 
-		ServerProxy.addListener(this);
-		ServerProxy.connect(IP, PORT);
+		Map.TEST_MAP.getBoundaries().stream().forEach(boundary -> {
+			world.add(new Wall(boundary.getFirst(), boundary.getSecond()));
+		});
+
+		Map.TEST_MAP.getObjs_back().stream().forEach(obj -> {
+			world.add_back(obj);
+		});
+
+		Map.TEST_MAP.getObjs_front().stream().forEach(obj -> {
+			world.add_front(obj);
+		});
+
+		Map.TEST_MAP.getObjs_top().stream().forEach(obj -> {
+			world.add_top(obj);
+		});
+
+
+		mainMenu.create();
+
 	}
 
 	float testAngle = 0;
 
+
 	@Override
 	public synchronized void render () {
-		if (!started)
+		if (!started){
+			mainMenu.render();
 			return;
+		}
 		//TEST
 		testAngle+=10;
-		test1.setDirection(testAngle);
-		test2.setDirection(testAngle + 180);
-		bl.update(Gdx.graphics.getDeltaTime());
 
 		Zombie.static_update();
 
-		if (zoom < zoom_to){
-			float delta = zoom_to - zoom;
+		if (zoom < zoom_to * effect_magnification){
+			float delta = zoom_to * effect_magnification - zoom;
 			zoom += Math.min(delta/10, 0.1f);
 
-			if (zoom > zoom_to)
-				zoom = zoom_to;
-		} else if (zoom > zoom_to){
-			float delta = zoom - zoom_to;
+			if (zoom > zoom_to* effect_magnification)
+				zoom = zoom_to* effect_magnification;
+		} else if (zoom > zoom_to* effect_magnification){
+			float delta = zoom - zoom_to* effect_magnification;
 			zoom -= Math.min(delta/10, 0.1f);
 
-			if (zoom < zoom_to)
-				zoom = zoom_to;
+			if (zoom < zoom_to * effect_magnification)
+				zoom = zoom_to* effect_magnification;
 		}
 
 		camera.zoom = zoom;
@@ -201,7 +220,7 @@ public class Client extends ApplicationAdapter implements ConnectionListener {
 			}
 		}
 
-		structures.stream().forEach(structure -> structure.render_floor(batch));
+		world.render_back(batch);
 
 		zombies.stream().forEach(zombie -> zombie.render_gore(batch));
 		zombies.stream().forEach(zombie -> zombie.render(batch));
@@ -217,12 +236,9 @@ public class Client extends ApplicationAdapter implements ConnectionListener {
 		self.render(batch);
 
 
-		structures.stream().forEach(structure -> structure.render_walls(batch));
-		batch.end();
-		PhysicsHandler.update();
-		PhysicsHandler.getRayHandler().setCombinedMatrix(camera);
-		PhysicsHandler.getRayHandler().updateAndRender();
-		batch.begin();
+		world.render_front(batch);
+
+
 		for (Vector2[] bullets:
 				bullets) {
 			Sprite b_sprite = new Sprite(Bullet.texture);
@@ -234,7 +250,13 @@ public class Client extends ApplicationAdapter implements ConnectionListener {
 			b_sprite.draw(batch);
 		}
 
-		bl.render(batch);
+		batch.end();
+		PhysicsHandler.update();
+		PhysicsHandler.getRayHandler().setCombinedMatrix(camera);
+		PhysicsHandler.getRayHandler().updateAndRender();
+		batch.begin();
+
+		world.render_top(batch);
 		batch.end();
 
 
@@ -245,6 +267,8 @@ public class Client extends ApplicationAdapter implements ConnectionListener {
 
 		font.draw(batch_hud, "Position: " + (int)(self.position.x * 10) / 10f + ", " + (int)(self.position.y * 10) / 10f, 5, Gdx.graphics.getHeight() - 5);
 		font.draw(batch_hud, "Wave: " + current_wave, 5, Gdx.graphics.getHeight() - 20);
+		font.draw(batch_hud, "cursor: " + Transform.scale_to_world(camera.position.x + (Gdx.input.getX() - Gdx.graphics.getWidth()/2)*camera.zoom) + ", " + Transform.scale_to_world(camera.position.y - (Gdx.input.getY() - Gdx.graphics.getHeight()/2)*camera.zoom), 5, Gdx.graphics.getHeight() - 35);
+		font.draw(batch_hud, "Health: " + self.getHealth() + "/" + self.MAX_HEALTH, 5, Gdx.graphics.getHeight() - 50);
 		batch_hud.end();
 	}
 	
@@ -260,7 +284,7 @@ public class Client extends ApplicationAdapter implements ConnectionListener {
 		//System.out.println(args[0]);
 		switch (args[0]){
 			case ServerHeaders.CONNECT:
-				ServerProxy.join(self.getName(), Character.BUSINESS.toString());
+				ServerProxy.join(self.getName(), self.getCharacter().toString());
 				break;
 			case ServerHeaders.RECONNECT:
 				//?
@@ -283,9 +307,10 @@ public class Client extends ApplicationAdapter implements ConnectionListener {
 				if (id == my_id) {
 					self.position.x = Float.parseFloat(args[2]);
 					self.position.y = Float.parseFloat(args[3]);
+					self.setHealth(Float.parseFloat(args[5]));
 					if (!args[5].equals(self.getWeapon().getWeaponData().toString())){
-						WeaponData wd = WeaponData.getWeapon(args[5]);
-						self.setWeapon(WeaponData.getWeapon(args[5]));
+						WeaponData wd = WeaponData.getWeapon(args[6]);
+						self.setWeapon(WeaponData.getWeapon(args[6]));
 						zoom_to = wd.scope;
 					}
 					return;
@@ -293,9 +318,10 @@ public class Client extends ApplicationAdapter implements ConnectionListener {
 				teamMates[id].position.x = Float.parseFloat(args[2]);
 				teamMates[id].position.y = Float.parseFloat(args[3]);
 				teamMates[id].rotation = Float.parseFloat(args[4]);
+				teamMates[id].setHealth(Float.parseFloat(args[5]));
 
-				if (!args[5].equals(teamMates[id].getWeapon().getWeaponData().toString())){
-					WeaponData wd = WeaponData.getWeapon(args[5]);
+				if (!args[6].equals(teamMates[id].getWeapon().getWeaponData().toString())){
+					WeaponData wd = WeaponData.getWeapon(args[6]);
 					teamMates[id].setWeapon(wd);
 				}
 
@@ -332,7 +358,8 @@ public class Client extends ApplicationAdapter implements ConnectionListener {
 							zombies.get(i).setPosition(Float.parseFloat(args[6 * i + 1]), Float.parseFloat(args[6 * i + 2]));
 							zombies.get(i).setRotation(Float.parseFloat(args[6 * i + 3]));
 							zombies.get(i).setHealth(Float.parseFloat(args[6 * i + 4]));
-							com.erkan.zombienado2.server.Zombie.Behavior b = args[5 * i + 6].equals("Roaming") ? com.erkan.zombienado2.server.Zombie.Behavior.Roaming : (args[5 * i + 6].equals("Hunting") ? com.erkan.zombienado2.server.Zombie.Behavior.Hunting : com.erkan.zombienado2.server.Zombie.Behavior.Standing);
+
+							com.erkan.zombienado2.server.Zombie.Behavior b = args[6 * i + 6].equals("Roaming") ? com.erkan.zombienado2.server.Zombie.Behavior.Roaming : (args[6 * i + 6].equals("Hunting") ? com.erkan.zombienado2.server.Zombie.Behavior.Hunting : com.erkan.zombienado2.server.Zombie.Behavior.Standing);
 							zombies.get(i).setBehavior(b);
 							//System.out.println(args[6 * i + 6]);
 							if (Boolean.parseBoolean(args[6 * i + 5])){
@@ -353,5 +380,39 @@ public class Client extends ApplicationAdapter implements ConnectionListener {
 				current_wave = Integer.parseInt(args[1]);
 				break;
 		}
+	}
+
+	@Override
+	public void beginContact(Contact contact) {
+		if (contact.getFixtureA().getFilterData().categoryBits == FilterConstants.ROOF_SENSOR){
+			((Structure)contact.getFixtureA().getUserData()).hide_roof();
+			effect_magnification = 0.65f;
+		}
+		if (contact.getFixtureB().getFilterData().categoryBits == FilterConstants.ROOF_SENSOR){
+			((Structure)contact.getFixtureB().getUserData()).hide_roof();
+			effect_magnification = 0.65f;
+		}
+	}
+
+	@Override
+	public void endContact(Contact contact) {
+		if (contact.getFixtureA().getFilterData().categoryBits == FilterConstants.ROOF_SENSOR){
+			((Structure)contact.getFixtureA().getUserData()).show_roof();
+			effect_magnification = 1f;
+		}
+		if (contact.getFixtureB().getFilterData().categoryBits == FilterConstants.ROOF_SENSOR){
+			((Structure)contact.getFixtureB().getUserData()).show_roof();
+			effect_magnification = 1f;
+		}
+	}
+
+	@Override
+	public void preSolve(Contact contact, Manifold oldManifold) {
+
+	}
+
+	@Override
+	public void postSolve(Contact contact, ContactImpulse impulse) {
+
 	}
 }

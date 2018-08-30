@@ -30,6 +30,10 @@ public class Character {
         torso_1h = new Texture(path+"torso_1h.png");
         torso_2h = new Texture(path+"torso_2h.png");
         torso_dw = new Texture(path+"torso_dw.png");
+
+        torso_1h.setFilter(Texture.TextureFilter.Linear, Texture.TextureFilter.Linear);
+        torso_2h.setFilter(Texture.TextureFilter.Linear, Texture.TextureFilter.Linear);
+        torso_dw.setFilter(Texture.TextureFilter.Linear, Texture.TextureFilter.Linear);
     }
 
     public static final Character SOLDIER = new Character("animations/soldier/");

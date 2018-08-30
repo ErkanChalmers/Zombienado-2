@@ -24,6 +24,8 @@ import static com.erkan.zombienado2.graphics.Transform.*;
  * Created by Erik on 2018-07-30.
  */
 public abstract class Player {
+    public static final float MAX_HEALTH = 50f;
+
     private boolean init_done;
 
     Character character;
@@ -41,6 +43,7 @@ public abstract class Player {
     private float elapsed_shooting_time = 0;
     private boolean isshooting = false;
     public float distance_to_focus = to_screen_space(10);
+    private float health;
 
 
     private Vector2 direction = new Vector2();
@@ -57,15 +60,28 @@ public abstract class Player {
         flash_light = PhysicsHandler.createConeLight(to_screen_space(position.x), to_screen_space(position.y), new Color(.45f,.45f,.45f,.95f), to_screen_space(8), rotation, 25);
         //flash_focus = PhysicsHandler.createPointLight(to_screen_space(position.x), to_screen_space(position.y), new Color(.45f, .45f, .45f, .95f), 300);
         muzzle_elumination = PhysicsHandler.createPointLight(to_screen_space(position.x), to_screen_space(position.y), new Color(1,1,0,1f), 400);
+        health = MAX_HEALTH;
     }
 
     public String getName(){
         return name;
     }
 
+    public Character getCharacter(){
+        return character;
+    }
+
     //must be done from GL context
     private void init(){
-        muzzle_animation = new Animation<TextureRegion>(1f/30f, Weapon.muzzleflash_arraay);
+        muzzle_animation = new Animation<TextureRegion>(1f/25f, Weapon.muzzleflash_arraay);
+    }
+
+    public float getHealth(){
+        return health;
+    }
+
+    public void setHealth(float health){
+        this.health = health;
     }
 
     public Weapon getWeapon(){

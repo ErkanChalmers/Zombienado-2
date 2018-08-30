@@ -21,7 +21,6 @@ public class Component {
     public static final Component WALL_LEFT;
     public static final Component WALL_RIGHT;
 
-
     public static final Component DEBUG;
 
     public static HashMap<Integer, Component> components;

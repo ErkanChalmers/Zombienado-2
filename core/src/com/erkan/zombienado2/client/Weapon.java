@@ -40,9 +40,10 @@ public class Weapon {
     }
 
     public Texture getTexture(){
-        if (texture == null)
+        if (texture == null) {
             texture = new Texture(wd.texture_path);
-
+            texture.setFilter(Texture.TextureFilter.Linear, Texture.TextureFilter.Linear);
+        }
         return texture;
     }
 

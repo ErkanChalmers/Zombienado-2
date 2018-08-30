@@ -5,6 +5,8 @@ import com.badlogic.gdx.graphics.Texture;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Set;
+import java.util.function.BiConsumer;
 
 /**
  * Created by Erik on 2018-07-30.
@@ -27,8 +29,8 @@ public class WeaponData {
     public final String audio_path;
     public final String audio_reload_path;
 
-    public static WeaponData PISTOL = new WeaponData(6, 2, 3, 3, 1,10, 1, .80f, HeldType.ONE_HANDED, "weapons/1h_pistol.png", "audio/pistol.mp3", "audio/pistol_reload.mp3");
-    public static WeaponData UZI = new WeaponData(4, 22, 2, 20, 1,30, 2, .80f, HeldType.ONE_HANDED, "weapons/1h_smg.png", "audio/smg.mp3", "audio/rifle_reload.mp3");
+    public static WeaponData PISTOL = new WeaponData(6, 2, 3, 3, 1,10, 1, .70f, HeldType.ONE_HANDED, "weapons/1h_pistol.png", "audio/pistol.mp3", "audio/pistol_reload.mp3");
+    public static WeaponData UZI = new WeaponData(4, 22, 2, 20, 1,30, 2, .70f, HeldType.ONE_HANDED, "weapons/1h_smg.png", "audio/smg.mp3", "audio/rifle_reload.mp3");
     public static WeaponData ASSAULT_RIFLE = new WeaponData(9, 11, 2, 10,1, 30, 2.5f,1f, HeldType.TWO_HANDED, "weapons/2h_machinegun.png", "audio/ar.mp3", "audio/rifle_reload.mp3");
     public static WeaponData AK47 = new WeaponData(11, 7, 4, 15,1, 30, 2.8f,1f, HeldType.TWO_HANDED, "weapons/2h_ak47.png", "audio/ar2.mp3", "audio/rifle_reload.mp3");
     public static WeaponData SNIPER = new WeaponData(132, .5f, 0, 0, 1,8, 3f, 1.5f, HeldType.TWO_HANDED, "weapons/2h_sniper.png", "audio/sniper.mp3", "audio/rifle_reload.mp3");

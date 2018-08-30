@@ -1,21 +1,24 @@
 package com.erkan.zombienado2.server;
 
+import com.badlogic.gdx.math.MathUtils;
 import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.physics.box2d.Body;
+import com.badlogic.gdx.physics.box2d.Fixture;
+import com.badlogic.gdx.physics.box2d.RayCastCallback;
 import com.erkan.zombienado2.server.misc.FilterConstants;
 
 /**
  * Created by Erik on 2018-08-06.
  */
 public class Zombie {
-    public static final float DEF_SPAWN_RATE = .0001f;
-    public static final float DEF_WAVE_SIZE = 300;
+    public static final float DEF_SPAWN_RATE = .1f;
+    public static final float DEF_WAVE_SIZE = 200;
     public static final float DEF_MAX_HEALTH = 10;
     private static final float TIME_BEFORE_MOVE = .5f;
-    private static final float ATTACK_TIME = 2f;
+    private static final float ATTACK_TIME = .5f;
 
     public static final float RADIUS = .3f;
-    public static float VELOCITY = 2;
+    public static float VELOCITY = 2.5f;
     public static float ROAM_VELOCITY = .5f;
 
     public static float AGRO_RANGE = 7f;
@@ -30,7 +33,6 @@ public class Zombie {
     float spawn_time;
     float attack_time;
     boolean isAttacking;
-    float x, y;
 
     public Zombie(float x, float y, float health){
         //TODO: timer for moving
@@ -38,7 +40,8 @@ public class Zombie {
         body.setTransform(x, y, 0);
         body.setUserData(this);
         spawn_time = TIME_BEFORE_MOVE;
-        behavior = Behavior.Roaming;
+        rotation = MathUtils.random(360);
+        behavior = Behavior.Standing;
         this.health = health;
 
     }
@@ -54,8 +57,6 @@ public class Zombie {
 
     public boolean isAttacking(){
         boolean res = isAttacking;
-        if (isAttacking)
-            isAttacking = false;
         return res;
     }
 
@@ -104,9 +105,18 @@ public class Zombie {
         return health;
     }
 
+    Vector2 roam_dir;
     void setDirection(Vector2 direction){
-        body.setLinearVelocity(direction.scl(behavior.equals(Behavior.Hunting) ? VELOCITY : ROAM_VELOCITY));
-        rotation = direction.angle();
+        if (behavior.equals(Behavior.Hunting)){
+            direction.scl(VELOCITY);
+            body.setLinearVelocity(direction.x, direction.y);
+            rotation = direction.angle();
+            return;
+        }
+
+        if (elasped_roam == 0) {
+            roam_dir = direction.scl(behavior.equals(Behavior.Roaming) ? ROAM_VELOCITY : 0);
+        }
     }
 
     void setBehavior(Behavior behavior){
@@ -118,26 +128,45 @@ public class Zombie {
     }
 
     boolean updateDirection(){
-        return alive && tick == 0 && spawn_time <= 0;
+        return alive && elapsed_update == 0 && spawn_time <= 0;
     }
 
-    int tick = 0;
-    void update(){
+    float elapsed_update = 0;
+    float elasped_roam = 0;
+    void update(float dt){
         if (!alive && body != null){
             WorldManager.destroyBody(body);
             body = null;
         }
 
-        if (isAttacking)
+        if (body != null){
+            if (roam_dir != null && behavior.equals(Behavior.Roaming)) {
+                body.setLinearVelocity(roam_dir.x, roam_dir.y);
+                if (roam_dir.len() > .02f)
+                    rotation = roam_dir.angle();
+            }
+        }
+
+        if (isAttacking) {
             attack_time -= Server.STEP_TIME;
 
+            if (attack_time < -1f)
+                isAttacking = false;
+        }
         spawn_time -= Server.STEP_TIME;
 
-        tick++;
-        if (tick >= 5 && behavior.equals(Behavior.Hunting) || tick > 200){
-            tick = 0;
+        elapsed_update += dt;
+        if (elapsed_update >= .2){
+            elapsed_update = 0;
+        }
+        if (behavior.equals(Behavior.Roaming)){
+            elasped_roam += dt;
+            if (elasped_roam >= 5f){
+                elasped_roam = 0;
+            }
         }
     }
+
 
     public void destroy(){
         if (body != null){

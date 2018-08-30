@@ -31,7 +31,7 @@ public class BrokenLamp extends DynamicObject{
 
     public BrokenLamp(float x, float y, float r){
         super(x, y, r);
-        pl = PhysicsHandler.createPointLight(Transform.to_screen_space(x), Transform.to_screen_space(y), light, Transform.to_screen_space(4));
+        pl = PhysicsHandler.createPointLight(Transform.to_screen_space(x), Transform.to_screen_space(y), light, Transform.to_screen_space(5));
         pl.setContactFilter((short)FilterConstants.TOP_LIGHT, (short)FilterConstants.TOP_LIGHT, (short)FilterConstants.OBSTACLE_FIXTURE);
         sprite = new Sprite(texture);
         sprite.setOrigin(texture.getWidth()/2, texture.getHeight()/2);

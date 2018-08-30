@@ -140,6 +140,7 @@ public class Zombie {
                 walk.setFrameDuration(1f/10f);
                 break;
             case Standing:
+                walk.setFrameDuration(0f);
                 //walk.setPlayMode(Animation.PlayMode.);
                 break;
         }

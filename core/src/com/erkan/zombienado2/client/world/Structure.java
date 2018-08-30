@@ -1,13 +1,18 @@
 package com.erkan.zombienado2.client.world;
 
+import com.badlogic.gdx.Gdx;
+import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.g2d.Sprite;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.math.MathUtils;
 import com.badlogic.gdx.math.Vector2;
+import com.erkan.zombienado2.client.PhysicsHandler;
 import com.erkan.zombienado2.data.world.physics.BoxData;
 import com.erkan.zombienado2.data.world.physics.Component;
 import com.erkan.zombienado2.graphics.Transform;
+import com.badlogic.gdx.physics.box2d.*;
+import com.erkan.zombienado2.server.misc.FilterConstants;
 
 /**
  * Created by Erik on 2018-08-05.
@@ -27,7 +32,12 @@ public class Structure {
 
     BoxData bd;
     Material material;
+    Sprite roof;
+    boolean roof_hidden;
+    float roof_alpha;
+
     public Structure(BoxData bd, BuildType bt){
+        PhysicsHandler.createPrefab(bd);
         this.bd = bd;
        // material = WOOD;
         switch (bt){
@@ -41,7 +51,28 @@ public class Structure {
                 material = BRICK;
                 break;
         }
+
+        roof = new Sprite(STONE.floor);
+        roof.setColor(new Color(0f, 0f, 0f, 1f));
+        roof.setSize(Transform.to_screen_space(bd.getWidth())- txt_width/4, Transform.to_screen_space(bd.getHeight())- txt_width/4);
+        roof.setCenter(Transform.to_screen_space(bd.getX()), Transform.to_screen_space(bd.getY()));
+        roof.setOriginCenter();
+        roof.setRotation(bd.getR());
+
+        Body sensor = PhysicsHandler.createRect(roof.getWidth()/2, roof.getHeight()/2, BodyDef.BodyType.StaticBody, FilterConstants.ROOF_SENSOR,FilterConstants.ROOF_SENSOR, FilterConstants.PLAYER_FIXTURE);
+        sensor.setTransform(Transform.to_screen_space(bd.getX()), Transform.to_screen_space(bd.getY()), bd.getR() * MathUtils.degreesToRadians);
+        sensor.getFixtureList().get(0).setSensor(true);
+        sensor.getFixtureList().get(0).setUserData(this);
+
     }
+
+    public void hide_roof(){
+        roof_hidden = true;
+    }
+
+    public void show_roof(){roof_hidden = false;
+    }
+
         //TODO: refactor.. really, this is incredibly awkward
     public void render_floor(SpriteBatch batch) {
         final float len = txt_width/2;
@@ -77,6 +108,19 @@ public class Structure {
             sprite.setRotation(bd.getR());
             sprite.draw(batch);
         });
+    }
+
+    public void render_roof(SpriteBatch batch){
+        if (roof_hidden){
+            roof_alpha -= Gdx.graphics.getDeltaTime();
+        } else {
+            roof_alpha += Gdx.graphics.getDeltaTime();
+        }
+        roof_alpha = MathUtils.clamp(roof_alpha, 0, 1f);
+
+
+        roof.setAlpha(roof_alpha);
+        roof.draw(batch);
     }
 
     Texture getTexture(int id){

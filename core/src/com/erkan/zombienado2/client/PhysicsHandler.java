@@ -9,6 +9,7 @@ import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.math.MathUtils;
 import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.physics.box2d.*;
+import com.erkan.zombienado2.data.world.Boundary;
 import com.erkan.zombienado2.data.world.physics.Component;
 import com.erkan.zombienado2.data.world.physics.BoxData;
 import com.erkan.zombienado2.graphics.Transform;
@@ -22,12 +23,12 @@ public class PhysicsHandler {
     private static RayHandler rayHandler;
     private static World world;
 
-    public static void init(){
+    public static void init(ContactListener cl){
         Box2D.init();
         world = new World(new Vector2(0, 0), false);
+        world.setContactListener(cl);
         rayHandler = new RayHandler(world, Gdx.graphics.getWidth()/8, Gdx.graphics.getHeight()/8);
-
-        rayHandler.setAmbientLight(.01f);
+        //rayHandler.setAmbientLight(1f);
         //rayHandler.setBlurNum(2);
         RayHandler.useDiffuseLight(false);
         Light.setGlobalContactFilter(FilterConstants.LIGHT, FilterConstants.LIGHT, (short)~FilterConstants.PHYSICS_FIXTURE);
@@ -56,15 +57,18 @@ public class PhysicsHandler {
         world.destroyBody(body);
     }
 
-    public synchronized static Body createRect(float w, float h, Short... bits){
+    public synchronized static Body createRect(float w, float h, BodyDef.BodyType bt, Short categoryBits, Short groupBits, Short maskBits){
         BodyDef def = new BodyDef();
-        def.type = BodyDef.BodyType.DynamicBody;
+        def.type = bt;
 
         PolygonShape shape = new PolygonShape();
         shape.setAsBox(w, h);
 
         FixtureDef fix = new FixtureDef();
         fix.shape = shape;
+        fix.filter.categoryBits = categoryBits;
+        fix.filter.groupIndex = groupBits;
+        fix.filter.maskBits = maskBits;
 
         Body body = world.createBody(def);
         body.createFixture(fix);
@@ -91,6 +95,29 @@ public class PhysicsHandler {
         body.createFixture(fix);
         shape.dispose();
         return body;
+    }
+
+    public synchronized static void createWall(Boundary boundary){
+        BodyDef bodyDef = new BodyDef();
+        bodyDef.type = BodyDef.BodyType.StaticBody;
+        PolygonShape shape = new PolygonShape();
+        float len = Math.abs(Transform.to_screen_space(boundary.getStart().cpy().sub(boundary.getEnd().cpy()).len()));
+        shape.setAsBox(len / 2, Transform.to_screen_space(boundary.getWidth()) / 2);
+        FixtureDef fix = new FixtureDef();
+        fix.shape = shape;
+        fix.filter.categoryBits = FilterConstants.OBSTACLE_FIXTURE;
+        fix.filter.maskBits = (short)(FilterConstants.ENEMY_FIXTURE | FilterConstants.PLAYER_FIXTURE | FilterConstants.PROJECTILE_FIXTURE | (!boundary.isSeeThrough() ? (FilterConstants.LIGHT | FilterConstants.TOP_LIGHT) : 0x0));
+        Body b = world.createBody(bodyDef);
+        b.createFixture(fix);
+        shape.dispose();
+
+        float x = Transform.to_screen_space(boundary.getStart().x + (boundary.getEnd().x - boundary.getStart().x) / 2f);
+        float y = Transform.to_screen_space(boundary.getStart().y + (boundary.getEnd().y - boundary.getStart().y) / 2f);
+
+        float rot = boundary.getEnd().cpy().sub(boundary.getStart().cpy()).angleRad();
+
+        b.setTransform(x, y, rot);
+
     }
 
     public static void createPrefab(BoxData boxData){

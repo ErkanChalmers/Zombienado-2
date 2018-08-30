@@ -12,4 +12,7 @@ public class FilterConstants {
 
     public static final short LIGHT = 0x1000;
     public static final short TOP_LIGHT = 0x2000;
+
+
+    public static final short ROOF_SENSOR = 0x3000;
 }

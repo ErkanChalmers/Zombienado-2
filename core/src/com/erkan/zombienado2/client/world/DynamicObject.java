@@ -12,7 +12,6 @@ public abstract class DynamicObject {
     protected DynamicObject(float x, float y, float z){
         this.x = x;
         this.y = y;
-        this.r = r;
     }
 
     public abstract void update(float dt);
