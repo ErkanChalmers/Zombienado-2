@@ -4,9 +4,11 @@ import com.badlogic.gdx.math.MathUtils;
 import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.physics.box2d.*;
 import com.badlogic.gdx.physics.box2d.World;
+import com.erkan.zombienado2.client.Player;
 import com.erkan.zombienado2.client.world.*;
 import com.erkan.zombienado2.data.world.Map;
 import com.erkan.zombienado2.data.weapons.WeaponData;
+import com.erkan.zombienado2.graphics.Transform;
 import com.erkan.zombienado2.networking.ServerHeaders;
 import com.erkan.zombienado2.server.misc.FilterConstants;
 import com.erkan.zombienado2.server.networking.ConnectionListener;
@@ -53,15 +55,6 @@ public class Server implements ConnectionListener, ContactListener {
         //has to be done last i think, because context need to be initialized (eg world)
         ConnectionManager.init(this, PORT);
         ConnectionManager.accept(CLIENTS_TO_ACCEPT);
-    }
-
-    public static List<Vector2> getPlayerPositions() {
-        List<Vector2> positions = new ArrayList<>();
-        for (PlayerModel pm:
-             instance.players) {
-            positions.add(pm.body.getPosition().cpy());
-        }
-        return positions;
     }
 
     @Override
@@ -245,6 +238,27 @@ public class Server implements ConnectionListener, ContactListener {
 
             while (zombie_iterator.hasNext()) {
                 Zombie zombie = zombie_iterator.next();
+                Vector2 shortest_distance = new Vector2(9999, 9999);
+                Vector2 target_position = null;
+
+                for (PlayerModel player : players) {
+                    Vector2 zp = zombie.getPosition().cpy();
+                    Vector2 pp = new Vector2(player.body.getPosition().x, player.body.getPosition().y);
+                    Vector2 dist = pp.cpy().sub(zp);
+                    if (dist.len() < shortest_distance.len()) {
+                        shortest_distance = dist;
+                        target_position = pp;
+                    }
+                }
+
+                if (zombie.getBehavior().equals(Zombie.Behavior.Hunting) && shortest_distance.len() < Zombie.HUNT_RANGE || shortest_distance.len() < Zombie.AGRO_RANGE) {
+                    zombie.setBehavior(Zombie.Behavior.Hunting);
+                    zombie.setTarget(target_position);
+                } else if (zombie.position_reached()){
+                    zombie.setBehavior(Zombie.Behavior.Roaming);
+                    zombie.setTarget(zombie.getPosition().cpy().add(new Vector2().setToRandomDirection().scl(5)));
+                }
+
                 zombie.update(STEP_TIME);
 
                 if (zombie.isAlive())

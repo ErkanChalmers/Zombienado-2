@@ -5,6 +5,7 @@ import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.physics.box2d.Body;
 import com.badlogic.gdx.physics.box2d.Fixture;
 import com.badlogic.gdx.physics.box2d.RayCastCallback;
+import com.badlogic.gdx.physics.box2d.Transform;
 import com.erkan.zombienado2.server.misc.FilterConstants;
 
 /**
@@ -12,7 +13,7 @@ import com.erkan.zombienado2.server.misc.FilterConstants;
  */
 public class Zombie {
     public static final float DEF_SPAWN_RATE = .1f;
-    public static final float DEF_WAVE_SIZE = 200;
+    public static final float DEF_WAVE_SIZE = 0;
     public static final float DEF_MAX_HEALTH = 10;
     private static final float ATTACK_TIME = .5f;
 
@@ -41,7 +42,7 @@ public class Zombie {
         body.setTransform(x, y, 0);
         body.setUserData(this);
         rotation = MathUtils.random(360);
-        behavior = Behavior.Standing;
+        behavior = Behavior.Roaming;
         this.health = health;
 
     }
@@ -105,6 +106,23 @@ public class Zombie {
         return health;
     }
 
+
+    boolean position_reached(){
+        if (behavior.equals(Behavior.Hunting))
+            return true;
+        if (move_target == null)
+            return true;
+
+        if (body.getPosition().cpy().sub(move_target).len() < .2f)
+            return true;
+
+        return false;
+    }
+
+    void setTarget(Vector2 target) {
+        move_target = target;
+    }
+
     void setBehavior(Behavior behavior){
         this.behavior = behavior;
     }
@@ -126,60 +144,15 @@ public class Zombie {
                 isAttacking = false;
         }
 
-        switch (behavior){
-            case Standing:
-                update_standing();
-                break;
-            case Hunting:
-                update_hunting();
-                break;
-            case Roaming:
-                update_roaming();
-                break;
+        if (!behavior.equals(Behavior.Standing) && move_target != null && body != null){
+            Vector2 dir = move_target.cpy().sub(body.getPosition()).setLength(1);
+            body.setLinearVelocity(dir.scl(behavior.equals(Behavior.Hunting) ? VELOCITY : ROAM_VELOCITY));
+            rotation = dir.angle();
+            System.out.println(behavior);
+            System.out.println(body.getPosition());
+            System.out.println(move_target);
+            System.out.println("_________________");
         }
-    }
-
-    void proximity_scan(){
-        Vector2 shortest_distance = new Vector2(9999, 9999);
-        Vector2 target_position;
-        for (Vector2 p_pos : Server.getPlayerPositions()) {
-            Vector2 zp = getPosition().cpy();
-            Vector2 dist = p_pos.sub(zp);
-            if (dist.len() < shortest_distance.len()) {
-                shortest_distance = dist;
-                target_position = p_pos;
-            }
-        }
-
-        if (getBehavior().equals(Behavior.Hunting) && shortest_distance.len() < Zombie.HUNT_RANGE || shortest_distance.len() < Zombie.AGRO_RANGE) {
-            setBehavior(Behavior.Hunting);
-        } else {
-            setBehavior(Behavior.Roaming);
-        }
-    }
-
-    void update_hunting(){
-
-        //TODO: set position instead of direction!
-
-
-            zombie.setDirection(shortest_distance.setLength(1));
-        } else {
-            if (MathUtils.randomBoolean(.1f)){
-                zombie.setBehavior(Zombie.Behavior.Standing);
-                zombie.setDirection(new Vector2(0, 0));
-            } else {
-                zombie.setBehavior(Zombie.Behavior.Roaming);
-                zombie.setDirection(new Vector2().setToRandomDirection());
-            }
-        }
-    }
-
-    void update_roaming(){
-
-    }
-
-    void update_standing(){
 
     }
 

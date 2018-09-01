@@ -1,8 +1,12 @@
 package com.erkan.zombienado2.server;
 
+import com.badlogic.gdx.ai.pfa.Connection;
+import com.badlogic.gdx.ai.pfa.Graph;
+import com.badlogic.gdx.ai.pfa.indexed.IndexedGraph;
 import com.badlogic.gdx.math.MathUtils;
 import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.physics.box2d.*;
+import com.badlogic.gdx.utils.Array;
 import com.erkan.zombienado2.data.world.Boundary;
 import com.erkan.zombienado2.data.world.physics.Component;
 import com.erkan.zombienado2.data.world.physics.BoxData;
@@ -15,6 +19,22 @@ import com.erkan.zombienado2.server.misc.FilterConstants;
  */
 public class WorldManager {
     private static World world = null;
+    private Graph<Vector2> graph = new IndexedGraph<Vector2>() {
+        @Override
+        public int getIndex(Vector2 node) {
+            return 0;
+        }
+
+        @Override
+        public int getNodeCount() {
+            return 0;
+        }
+
+        @Override
+        public Array<Connection<Vector2>> getConnections(Vector2 fromNode) {
+            return null;
+        }
+    }
 
     public static void setWorld(World world, ContactListener cl){
         WorldManager.world = world;
