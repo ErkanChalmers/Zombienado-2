@@ -14,7 +14,6 @@ public class Zombie {
     public static final float DEF_SPAWN_RATE = .1f;
     public static final float DEF_WAVE_SIZE = 200;
     public static final float DEF_MAX_HEALTH = 10;
-    private static final float TIME_BEFORE_MOVE = .5f;
     private static final float ATTACK_TIME = .5f;
 
     public static final float RADIUS = .3f;
@@ -30,16 +29,17 @@ public class Zombie {
     private float health;
     private Body body;
     private float rotation = 0;
-    float spawn_time;
-    float attack_time;
-    boolean isAttacking;
+    private float attack_time;
+    private boolean isAttacking;
+
+    private Vector2 move_target;
+
 
     public Zombie(float x, float y, float health){
         //TODO: timer for moving
         body = WorldManager.createCircle(RADIUS, FilterConstants.ENEMY_FIXTURE, (short)(FilterConstants.ENEMY_FIXTURE | FilterConstants.PLAYER_FIXTURE | FilterConstants.OBSTACLE_FIXTURE | FilterConstants.PROJECTILE_FIXTURE));
         body.setTransform(x, y, 0);
         body.setUserData(this);
-        spawn_time = TIME_BEFORE_MOVE;
         rotation = MathUtils.random(360);
         behavior = Behavior.Standing;
         this.health = health;
@@ -94,7 +94,7 @@ public class Zombie {
         if (body == null){
             return new Vector2(0, 0);
         }
-        return body.getPosition();
+        return body.getPosition().cpy();
     }
 
     public float getRotation(){
@@ -105,20 +105,6 @@ public class Zombie {
         return health;
     }
 
-    Vector2 roam_dir;
-    void setDirection(Vector2 direction){
-        if (behavior.equals(Behavior.Hunting)){
-            direction.scl(VELOCITY);
-            body.setLinearVelocity(direction.x, direction.y);
-            rotation = direction.angle();
-            return;
-        }
-
-        if (elasped_roam == 0) {
-            roam_dir = direction.scl(behavior.equals(Behavior.Roaming) ? ROAM_VELOCITY : 0);
-        }
-    }
-
     void setBehavior(Behavior behavior){
         this.behavior = behavior;
     }
@@ -127,24 +113,10 @@ public class Zombie {
         return behavior;
     }
 
-    boolean updateDirection(){
-        return alive && elapsed_update == 0 && spawn_time <= 0;
-    }
-
-    float elapsed_update = 0;
-    float elasped_roam = 0;
     void update(float dt){
         if (!alive && body != null){
             WorldManager.destroyBody(body);
             body = null;
-        }
-
-        if (body != null){
-            if (roam_dir != null && behavior.equals(Behavior.Roaming)) {
-                body.setLinearVelocity(roam_dir.x, roam_dir.y);
-                if (roam_dir.len() > .02f)
-                    rotation = roam_dir.angle();
-            }
         }
 
         if (isAttacking) {
@@ -153,18 +125,62 @@ public class Zombie {
             if (attack_time < -1f)
                 isAttacking = false;
         }
-        spawn_time -= Server.STEP_TIME;
 
-        elapsed_update += dt;
-        if (elapsed_update >= .2){
-            elapsed_update = 0;
+        switch (behavior){
+            case Standing:
+                update_standing();
+                break;
+            case Hunting:
+                update_hunting();
+                break;
+            case Roaming:
+                update_roaming();
+                break;
         }
-        if (behavior.equals(Behavior.Roaming)){
-            elasped_roam += dt;
-            if (elasped_roam >= 5f){
-                elasped_roam = 0;
+    }
+
+    void proximity_scan(){
+        Vector2 shortest_distance = new Vector2(9999, 9999);
+        Vector2 target_position;
+        for (Vector2 p_pos : Server.getPlayerPositions()) {
+            Vector2 zp = getPosition().cpy();
+            Vector2 dist = p_pos.sub(zp);
+            if (dist.len() < shortest_distance.len()) {
+                shortest_distance = dist;
+                target_position = p_pos;
             }
         }
+
+        if (getBehavior().equals(Behavior.Hunting) && shortest_distance.len() < Zombie.HUNT_RANGE || shortest_distance.len() < Zombie.AGRO_RANGE) {
+            setBehavior(Behavior.Hunting);
+        } else {
+            setBehavior(Behavior.Roaming);
+        }
+    }
+
+    void update_hunting(){
+
+        //TODO: set position instead of direction!
+
+
+            zombie.setDirection(shortest_distance.setLength(1));
+        } else {
+            if (MathUtils.randomBoolean(.1f)){
+                zombie.setBehavior(Zombie.Behavior.Standing);
+                zombie.setDirection(new Vector2(0, 0));
+            } else {
+                zombie.setBehavior(Zombie.Behavior.Roaming);
+                zombie.setDirection(new Vector2().setToRandomDirection());
+            }
+        }
+    }
+
+    void update_roaming(){
+
+    }
+
+    void update_standing(){
+
     }
 
 

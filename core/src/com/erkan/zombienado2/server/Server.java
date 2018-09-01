@@ -19,6 +19,7 @@ import java.util.*;
  * Created by Erik on 2018-07-29.
  */
 public class Server implements ConnectionListener, ContactListener {
+    private static Server instance = null;
     private final int CLIENTS_TO_ACCEPT;
 
     private static boolean isAwaitingConnection = true;
@@ -34,6 +35,8 @@ public class Server implements ConnectionListener, ContactListener {
 
 
     public Server(final int PORT, final int clients_to_accept){
+        if (instance == null)
+            instance = this;
         Box2D.init();
         CLIENTS_TO_ACCEPT = clients_to_accept;
         players = new PlayerModel[CLIENTS_TO_ACCEPT];
@@ -50,6 +53,15 @@ public class Server implements ConnectionListener, ContactListener {
         //has to be done last i think, because context need to be initialized (eg world)
         ConnectionManager.init(this, PORT);
         ConnectionManager.accept(CLIENTS_TO_ACCEPT);
+    }
+
+    public static List<Vector2> getPlayerPositions() {
+        List<Vector2> positions = new ArrayList<>();
+        for (PlayerModel pm:
+             instance.players) {
+            positions.add(pm.body.getPosition().cpy());
+        }
+        return positions;
     }
 
     @Override
@@ -234,31 +246,6 @@ public class Server implements ConnectionListener, ContactListener {
             while (zombie_iterator.hasNext()) {
                 Zombie zombie = zombie_iterator.next();
                 zombie.update(STEP_TIME);
-                if (zombie.updateDirection()) {
-                    Vector2 shortest_distance = new Vector2(9999, 9999);
-                    for (PlayerModel player : players) {
-                        Vector2 pp = player.body.getPosition().cpy();
-                        Vector2 zp = zombie.getPosition().cpy();
-                        Vector2 dist = pp.sub(zp);
-                        if (dist.len() < shortest_distance.len()) {
-                            shortest_distance = dist;
-                        }
-                    }
-                    //TODO: set position instead of direction!
-                    if (zombie.getBehavior().equals(Zombie.Behavior.Hunting) && shortest_distance.len() < Zombie.HUNT_RANGE || shortest_distance.len() < Zombie.AGRO_RANGE) {
-                        zombie.setBehavior(Zombie.Behavior.Hunting);
-
-                        zombie.setDirection(shortest_distance.setLength(1));
-                    } else {
-                        if (MathUtils.randomBoolean(.1f)){
-                            zombie.setBehavior(Zombie.Behavior.Standing);
-                            zombie.setDirection(new Vector2(0, 0));
-                        } else {
-                            zombie.setBehavior(Zombie.Behavior.Roaming);
-                            zombie.setDirection(new Vector2().setToRandomDirection());
-                        }
-                    }
-                }
 
                 if (zombie.isAlive())
                     all_dead = false;
