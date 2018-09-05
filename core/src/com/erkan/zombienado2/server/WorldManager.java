@@ -3,6 +3,7 @@ package com.erkan.zombienado2.server;
 import com.badlogic.gdx.ai.pfa.Connection;
 import com.badlogic.gdx.ai.pfa.Graph;
 import com.badlogic.gdx.ai.pfa.indexed.IndexedGraph;
+import com.badlogic.gdx.ai.pfa.indexed.IndexedHierarchicalGraph;
 import com.badlogic.gdx.math.MathUtils;
 import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.physics.box2d.*;
@@ -13,6 +14,9 @@ import com.erkan.zombienado2.data.world.physics.BoxData;
 import com.erkan.zombienado2.data.world.physics.StaticRectangle;
 import com.erkan.zombienado2.graphics.*;
 import com.erkan.zombienado2.server.misc.FilterConstants;
+import java.util.List;
+
+import java.util.ArrayList;
 
 /**
  * Created by Erik on 2018-07-29.
@@ -20,6 +24,35 @@ import com.erkan.zombienado2.server.misc.FilterConstants;
 public class WorldManager {
     private static World world = null;
     private Graph<Vector2> graph = new IndexedGraph<Vector2>() {
+        List<Vector2> nodes = new ArrayList<Vector2>();
+        List<List<Integer>> edges = new ArrayList<>();
+
+        public void addNode(Vector2 node){
+            nodes.add(node.cpy());
+        }
+
+        public void construct(){
+            for (int i = 0; i < nodes.size(); i++){
+                edges.add(new ArrayList<>());
+                for (int j = 0; j < nodes.size(); j++){
+                    if (i==j)
+                        continue;
+
+                    final int from = i;
+                    final int to = j;
+                    world.rayCast((fixture, point, normal, fraction) -> {
+                        if (fraction < 1 && fixture.getFilterData().categoryBits == FilterConstants.OBSTACLE_FIXTURE) {
+                            edges.get(from).remove(to);
+                            return 0;
+                        } else {
+                            edges.get(from).add(to);
+                            return 1;
+                        }
+                    }, nodes.get(i), nodes.get(j));
+                }
+            }
+        }
+
         @Override
         public int getIndex(Vector2 node) {
             return 0;
@@ -34,7 +67,7 @@ public class WorldManager {
         public Array<Connection<Vector2>> getConnections(Vector2 fromNode) {
             return null;
         }
-    }
+    };
 
     public static void setWorld(World world, ContactListener cl){
         WorldManager.world = world;
