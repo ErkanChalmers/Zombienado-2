@@ -13,11 +13,11 @@ public class DesktopLauncher {
 		System.out.println("Launcher: creating client");
 		LwjglApplicationConfiguration client_configuration = new LwjglApplicationConfiguration();
 		client_configuration.title = "Zombienado 2";
-		//client_configuration.width = 640;
-		//client_configuration.height = 480;
-		client_configuration.fullscreen = true;
-		client_configuration.width = 2560;
-		client_configuration.height = 1440;
+		client_configuration.width = 1920;
+		client_configuration.height = 1080;
+		//client_configuration.fullscreen = true;
+		//client_configuration.width = 2560;
+		//client_configuration.height = 1440;
 		client_configuration.samples = 3;
 		//"192.168.1.196"
 		new LwjglApplication(new Client(), client_configuration);

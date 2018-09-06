@@ -51,6 +51,7 @@ public class Server implements ConnectionListener, ContactListener {
                 WorldManager.createRect(((Solid)obj).getBounds());
             }
         });
+        WorldManager.getNavigationGraph().construct();
 
         //has to be done last i think, because context need to be initialized (eg world)
         ConnectionManager.init(this, PORT);
@@ -227,7 +228,7 @@ public class Server implements ConnectionListener, ContactListener {
 
             if (zombies.size() < wave_size && zombie_spawn_accumulator > spawn_rate) {
                 zombie_spawn_accumulator -= spawn_rate;
-                Vector2 spawnpos = Map.TEST_MAP.getRandomSpawnpoint();
+                Vector2 spawnpos = new Vector2(3 ,3);//Map.TEST_MAP.getRandomSpawnpoint();
                 zombies.add(new Zombie(spawnpos.x, spawnpos.y, max_health));
             }
 
@@ -256,7 +257,8 @@ public class Server implements ConnectionListener, ContactListener {
                     zombie.setTarget(target_position);
                 } else if (zombie.position_reached()){
                     zombie.setBehavior(Zombie.Behavior.Roaming);
-                    zombie.setTarget(zombie.getPosition().cpy().add(new Vector2().setToRandomDirection().scl(5)));
+                    List<Vector2> visible = WorldManager.getNavigationGraph().getVisibleNodes(zombie.getPosition().cpy());
+                    zombie.setTarget(visible.get(1));
                 }
 
                 zombie.update(STEP_TIME);

@@ -1,15 +1,19 @@
 package com.erkan.zombienado2.data.world.physics;
 
 import com.badlogic.gdx.math.MathUtils;
+import com.badlogic.gdx.math.Vector2;
+import com.erkan.zombienado2.client.Zombie;
 
 import java.util.*;
 
 /**
  * Created by Erik on 2018-08-04.
  */
-public class Component {
+public class Component implements Navigateable {
     public static final float LENGTH = 1.7f;
     public static final float DEPTH = .5f;
+
+    public static final float NAV_OFFSET = .5f;
 
     public static final Component WALL_CORNER_TOP_LEFT;
     public static final Component WALL_CORNER_TOP_RIGHT;
@@ -39,31 +43,67 @@ public class Component {
         WALL_CORNER_TOP_LEFT = new Component();
         WALL_CORNER_TOP_LEFT.addRectangle(0, LENGTH/2 - DEPTH/2, LENGTH/2, DEPTH/2);
         WALL_CORNER_TOP_LEFT.addRectangle(DEPTH/2 - LENGTH/2, 0, DEPTH/2, LENGTH/2);
+        WALL_CORNER_TOP_LEFT.addNavVector(new Vector2(-LENGTH/2 - NAV_OFFSET, LENGTH/2 + NAV_OFFSET));
+        WALL_CORNER_TOP_LEFT.addNavVector(new Vector2(LENGTH/2 + NAV_OFFSET, LENGTH/2-DEPTH/2));
+        WALL_CORNER_TOP_LEFT.addNavVector(new Vector2(-LENGTH/2 - NAV_OFFSET, LENGTH/2-DEPTH/2));
+        WALL_CORNER_TOP_LEFT.addNavVector(new Vector2(DEPTH/2 - LENGTH/2, LENGTH/2+NAV_OFFSET));
+        WALL_CORNER_TOP_LEFT.addNavVector(new Vector2(DEPTH/2 - LENGTH/2, -LENGTH/2-NAV_OFFSET));
 
         WALL_CORNER_TOP_RIGHT = new Component();
         WALL_CORNER_TOP_RIGHT.addRectangle(0, LENGTH/2 - DEPTH/2, LENGTH/2, DEPTH/2);
         WALL_CORNER_TOP_RIGHT.addRectangle(LENGTH/2 - DEPTH/2, 0, DEPTH/2, LENGTH/2);
+        WALL_CORNER_TOP_RIGHT.addNavVector(new Vector2(LENGTH/2 + NAV_OFFSET, LENGTH/2 + NAV_OFFSET));
+        WALL_CORNER_TOP_RIGHT.addNavVector(new Vector2(LENGTH/2 + NAV_OFFSET, LENGTH/2-DEPTH/2));
+        WALL_CORNER_TOP_RIGHT.addNavVector(new Vector2(-LENGTH/2 - NAV_OFFSET, LENGTH/2-DEPTH/2));
+        WALL_CORNER_TOP_RIGHT.addNavVector(new Vector2(LENGTH/2 - DEPTH/2, LENGTH/2+NAV_OFFSET));
+        WALL_CORNER_TOP_RIGHT.addNavVector(new Vector2(LENGTH/2 - DEPTH/2, -LENGTH/2-NAV_OFFSET));
 
         WALL_CORNER_BOTTOM_LEFT = new Component();
         WALL_CORNER_BOTTOM_LEFT.addRectangle(0, DEPTH/2-LENGTH/2, LENGTH/2, DEPTH/2);
         WALL_CORNER_BOTTOM_LEFT.addRectangle(DEPTH/2 - LENGTH/2, 0, DEPTH/2, LENGTH/2);
+        WALL_CORNER_BOTTOM_LEFT.addNavVector(new Vector2(-LENGTH/2 - NAV_OFFSET, -LENGTH/2 - NAV_OFFSET));
+        WALL_CORNER_BOTTOM_LEFT.addNavVector(new Vector2(LENGTH/2 + NAV_OFFSET, DEPTH/2-LENGTH/2));
+        WALL_CORNER_BOTTOM_LEFT.addNavVector(new Vector2(-LENGTH/2 - NAV_OFFSET, DEPTH/2-LENGTH/2));
+        WALL_CORNER_BOTTOM_LEFT.addNavVector(new Vector2(DEPTH/2 - LENGTH/2, LENGTH/2+NAV_OFFSET));
+        WALL_CORNER_BOTTOM_LEFT.addNavVector(new Vector2(DEPTH/2 - LENGTH/2, -LENGTH/2-NAV_OFFSET));
 
         WALL_CORNER_BOTTOM_RIGHT = new Component();
         WALL_CORNER_BOTTOM_RIGHT.addRectangle(0, DEPTH/2-LENGTH/2, LENGTH/2, DEPTH/2);
         WALL_CORNER_BOTTOM_RIGHT.addRectangle(LENGTH/2 - DEPTH/2, 0, DEPTH/2, LENGTH/2);
+        WALL_CORNER_BOTTOM_RIGHT.addNavVector(new Vector2(LENGTH/2 + NAV_OFFSET, -LENGTH/2 - NAV_OFFSET));
+        WALL_CORNER_BOTTOM_RIGHT.addNavVector(new Vector2(LENGTH/2 + NAV_OFFSET, DEPTH/2-LENGTH/2));
+        WALL_CORNER_BOTTOM_RIGHT.addNavVector(new Vector2(-LENGTH/2 - NAV_OFFSET, DEPTH/2-LENGTH/2));
+        WALL_CORNER_BOTTOM_RIGHT.addNavVector(new Vector2(LENGTH/2 - DEPTH/2, LENGTH/2+NAV_OFFSET));
+        WALL_CORNER_BOTTOM_RIGHT.addNavVector(new Vector2(LENGTH/2 - DEPTH/2, -LENGTH/2-NAV_OFFSET));
 
         //STANDARD
         WALL_TOP = new Component();
         WALL_TOP.addRectangle(0, LENGTH/2 - DEPTH/2, LENGTH/2, DEPTH/2);
+        WALL_TOP.addNavVector(new Vector2(LENGTH/2 + NAV_OFFSET, LENGTH/2 + NAV_OFFSET));
+        WALL_TOP.addNavVector(new Vector2(-LENGTH/2 - NAV_OFFSET, LENGTH/2 + NAV_OFFSET));
+        WALL_TOP.addNavVector(new Vector2(LENGTH/2 + NAV_OFFSET, LENGTH/2 - DEPTH - NAV_OFFSET));
+        WALL_TOP.addNavVector(new Vector2(-LENGTH/2 - NAV_OFFSET, LENGTH/2 - DEPTH - NAV_OFFSET));
 
         WALL_BOTTOM = new Component();
         WALL_BOTTOM.addRectangle(0, DEPTH/2-LENGTH/2, LENGTH/2, DEPTH/2);
+        WALL_BOTTOM.addNavVector(new Vector2(LENGTH/2 + NAV_OFFSET, -LENGTH/2 - NAV_OFFSET));
+        WALL_BOTTOM.addNavVector(new Vector2(-LENGTH/2 - NAV_OFFSET, -LENGTH/2 - NAV_OFFSET));
+        WALL_BOTTOM.addNavVector(new Vector2(LENGTH/2 + NAV_OFFSET, DEPTH-LENGTH/2 + NAV_OFFSET));
+        WALL_BOTTOM.addNavVector(new Vector2(-LENGTH/2 - NAV_OFFSET, DEPTH-LENGTH/2 + NAV_OFFSET));
 
         WALL_LEFT = new Component();
         WALL_LEFT.addRectangle(DEPTH/2 - LENGTH/2, 0, DEPTH/2, LENGTH/2);
+        WALL_LEFT.addNavVector(new Vector2(- LENGTH/2 - NAV_OFFSET, LENGTH/2+NAV_OFFSET));
+        WALL_LEFT.addNavVector(new Vector2(- LENGTH/2 - NAV_OFFSET, -LENGTH/2-NAV_OFFSET));
+        WALL_LEFT.addNavVector(new Vector2(DEPTH- LENGTH/2 + NAV_OFFSET, LENGTH/2+NAV_OFFSET));
+        WALL_LEFT.addNavVector(new Vector2(DEPTH- LENGTH/2 + NAV_OFFSET, -LENGTH/2-NAV_OFFSET));
 
         WALL_RIGHT = new Component();
         WALL_RIGHT.addRectangle(LENGTH/2 - DEPTH/2, 0, DEPTH/2, LENGTH/2);
+        WALL_RIGHT.addNavVector(new Vector2(LENGTH/2 + NAV_OFFSET, LENGTH/2+NAV_OFFSET));
+        WALL_RIGHT.addNavVector(new Vector2(LENGTH/2 + NAV_OFFSET, -LENGTH/2-NAV_OFFSET));
+        WALL_RIGHT.addNavVector(new Vector2(LENGTH/2 - DEPTH - NAV_OFFSET, LENGTH/2+NAV_OFFSET));
+        WALL_RIGHT.addNavVector(new Vector2(LENGTH/2 - DEPTH - NAV_OFFSET, -LENGTH/2-NAV_OFFSET));
 
         components.put(1, WALL_TOP);
         components.put(2, WALL_RIGHT);
@@ -85,6 +125,7 @@ public class Component {
     }
 
     List<ComponentBody> bodies = new LinkedList<>();
+    List<Vector2> navPoints = new LinkedList<>();
 
     private Component(){
     }
@@ -95,6 +136,15 @@ public class Component {
 
     public void addCircle(float x, float y, float radius){
         bodies.add(new CircularBody(x, y, radius));
+    }
+
+    public void addNavVector(Vector2 vec){
+        navPoints.add(vec);
+    }
+
+    @Override
+    public List<Vector2> getNavVectors() {
+        return navPoints;
     }
 
 

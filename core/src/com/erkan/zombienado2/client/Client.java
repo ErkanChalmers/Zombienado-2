@@ -4,6 +4,7 @@ import box2dLight.ConeLight;
 import com.badlogic.gdx.ApplicationAdapter;
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.Input;
+import com.badlogic.gdx.ai.pfa.Connection;
 import com.badlogic.gdx.audio.Sound;
 import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.GL20;
@@ -11,10 +12,12 @@ import com.badlogic.gdx.graphics.OrthographicCamera;
 import com.badlogic.gdx.graphics.g2d.BitmapFont;
 import com.badlogic.gdx.graphics.g2d.Sprite;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
+import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
 import com.badlogic.gdx.math.MathUtils;
 import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.math.Vector3;
 import com.badlogic.gdx.physics.box2d.*;
+import com.badlogic.gdx.utils.Array;
 import com.erkan.zombienado2.client.world.*;
 import com.erkan.zombienado2.client.world.World;
 import com.erkan.zombienado2.data.world.Map;
@@ -24,6 +27,7 @@ import com.erkan.zombienado2.client.networking.ServerProxy;
 import com.erkan.zombienado2.data.weapons.WeaponData;
 import com.erkan.zombienado2.networking.ServerHeaders;
 import com.badlogic.gdx.graphics.Texture;
+import com.erkan.zombienado2.server.WorldManager;
 import com.erkan.zombienado2.server.misc.FilterConstants;
 
 import java.util.*;
@@ -47,6 +51,7 @@ public class Client extends ApplicationAdapter implements ConnectionListener, Jo
 	BitmapFont font;
 	SpriteBatch batch;
 	SpriteBatch batch_hud;
+	ShapeRenderer debugRenderer;
 
 	Box2DDebugRenderer dDebugRenderer;
 
@@ -82,6 +87,7 @@ public class Client extends ApplicationAdapter implements ConnectionListener, Jo
  		Zombie.init();
 		PhysicsHandler.init(this);
 		dDebugRenderer = new Box2DDebugRenderer();
+		debugRenderer = new ShapeRenderer();
 		font = new BitmapFont();
 		self = new Self("n00b", Character.OFFICER);
 		zoom_to = self.getWeapon().getWeaponData().scope;
@@ -259,6 +265,35 @@ public class Client extends ApplicationAdapter implements ConnectionListener, Jo
 		world.render_top(batch);
 		batch.end();
 
+		Gdx.gl.glLineWidth(0.2f);
+		debugRenderer.setProjectionMatrix(camera.combined);
+		debugRenderer.begin(ShapeRenderer.ShapeType.Line);
+		debugRenderer.setColor(new Color(.5f, 1f, .7f, .4f));
+		WorldManager.getNavigationGraph().getNodes().stream().forEach(v -> {
+			Array<Connection<Vector2>> edges = WorldManager.getNavigationGraph().getConnections(v);
+			edges.forEach(e->{
+				debugRenderer.line(to_screen_space(e.getFromNode()), to_screen_space(e.getToNode()));
+			});
+		});
+		debugRenderer.end();
+		debugRenderer.begin(ShapeRenderer.ShapeType.Filled);
+		/*debugRenderer.setColor(new Color(.1f, .4f, 1f, .4f));
+		WorldManager.getNavigationGraph().getNodes().stream().forEach(v -> {
+			WorldManager.getNavigationGraph().getNodes().forEach(p ->{
+					debugRenderer.circle(to_screen_space(p.x), to_screen_space(p.y), 3);
+			});
+
+		});
+*/
+		debugRenderer.setColor(new Color(1f, .1f, .1f, .4f));
+		WorldManager.getNavigationGraph().getNodes().stream().forEach(v -> {
+			if (WorldManager.getNavigationGraph().visible_nodes != null){
+				WorldManager.getNavigationGraph().visible_nodes.forEach(p ->{
+						debugRenderer.circle(to_screen_space(p.x), to_screen_space(p.y), 5);
+				});
+			}
+		});
+		debugRenderer.end();
 
 
 		//dDebugRenderer.render(PhysicsHandler.getWorld(), camera.combined);

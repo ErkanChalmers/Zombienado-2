@@ -1,6 +1,7 @@
 package com.erkan.zombienado2.server;
 
 import com.badlogic.gdx.ai.pfa.Connection;
+import com.badlogic.gdx.ai.pfa.DefaultConnection;
 import com.badlogic.gdx.ai.pfa.Graph;
 import com.badlogic.gdx.ai.pfa.indexed.IndexedGraph;
 import com.badlogic.gdx.ai.pfa.indexed.IndexedHierarchicalGraph;
@@ -13,6 +14,8 @@ import com.erkan.zombienado2.data.world.physics.Component;
 import com.erkan.zombienado2.data.world.physics.BoxData;
 import com.erkan.zombienado2.data.world.physics.StaticRectangle;
 import com.erkan.zombienado2.graphics.*;
+import com.erkan.zombienado2.graphics.Transform;
+import com.erkan.zombienado2.server.ai.NavigationGraph;
 import com.erkan.zombienado2.server.misc.FilterConstants;
 import java.util.List;
 
@@ -23,55 +26,16 @@ import java.util.ArrayList;
  */
 public class WorldManager {
     private static World world = null;
-    private Graph<Vector2> graph = new IndexedGraph<Vector2>() {
-        List<Vector2> nodes = new ArrayList<Vector2>();
-        List<List<Integer>> edges = new ArrayList<>();
-
-        public void addNode(Vector2 node){
-            nodes.add(node.cpy());
-        }
-
-        public void construct(){
-            for (int i = 0; i < nodes.size(); i++){
-                edges.add(new ArrayList<>());
-                for (int j = 0; j < nodes.size(); j++){
-                    if (i==j)
-                        continue;
-
-                    final int from = i;
-                    final int to = j;
-                    world.rayCast((fixture, point, normal, fraction) -> {
-                        if (fraction < 1 && fixture.getFilterData().categoryBits == FilterConstants.OBSTACLE_FIXTURE) {
-                            edges.get(from).remove(to);
-                            return 0;
-                        } else {
-                            edges.get(from).add(to);
-                            return 1;
-                        }
-                    }, nodes.get(i), nodes.get(j));
-                }
-            }
-        }
-
-        @Override
-        public int getIndex(Vector2 node) {
-            return 0;
-        }
-
-        @Override
-        public int getNodeCount() {
-            return 0;
-        }
-
-        @Override
-        public Array<Connection<Vector2>> getConnections(Vector2 fromNode) {
-            return null;
-        }
-    };
+    private static NavigationGraph graph;
 
     public static void setWorld(World world, ContactListener cl){
         WorldManager.world = world;
+        graph = new NavigationGraph(world);
         world.setContactListener(cl);
+    }
+
+    public static NavigationGraph getNavigationGraph(){
+        return graph;
     }
 
     public static World getWorld(){
@@ -184,6 +148,7 @@ public class WorldManager {
                     shape.setRadius(cb.getRadius());
                 }
 
+
                 FixtureDef fix = new FixtureDef();
                 fix.shape = shape;
                 fix.filter.categoryBits = FilterConstants.OBSTACLE_FIXTURE;
@@ -193,6 +158,12 @@ public class WorldManager {
                 b.createFixture(fix);
                 shape.dispose();
                 b.setTransform(new Vector2(componentAt.getPosition().x + componentBody.getX(boxData.getR()), componentAt.getPosition().y + componentBody.getY(boxData.getR())), MathUtils.degreesToRadians * boxData.getR());
+
+                component.getNavVectors().stream().forEach(v -> {
+                    v = Transform.rotate(v, boxData.getR());
+                    v = new Vector2(componentAt.getPosition().x + v.x, componentAt.getPosition().y + v.y);
+                    graph.addNode(v);
+                });
 
             });
         }));

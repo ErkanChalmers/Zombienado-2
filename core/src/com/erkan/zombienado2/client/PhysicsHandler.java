@@ -28,7 +28,7 @@ public class PhysicsHandler {
         world = new World(new Vector2(0, 0), false);
         world.setContactListener(cl);
         rayHandler = new RayHandler(world, Gdx.graphics.getWidth()/8, Gdx.graphics.getHeight()/8);
-        //rayHandler.setAmbientLight(1f);
+        rayHandler.setAmbientLight(1f);
         //rayHandler.setBlurNum(2);
         RayHandler.useDiffuseLight(false);
         Light.setGlobalContactFilter(FilterConstants.LIGHT, FilterConstants.LIGHT, (short)~FilterConstants.PHYSICS_FIXTURE);
