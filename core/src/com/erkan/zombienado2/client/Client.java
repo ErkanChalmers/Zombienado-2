@@ -10,6 +10,7 @@ import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.GL20;
 import com.badlogic.gdx.graphics.OrthographicCamera;
 import com.badlogic.gdx.graphics.g2d.BitmapFont;
+import com.badlogic.gdx.graphics.g2d.GlyphLayout;
 import com.badlogic.gdx.graphics.g2d.Sprite;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
@@ -30,12 +31,15 @@ import com.badlogic.gdx.graphics.Texture;
 import com.erkan.zombienado2.server.WorldManager;
 import com.erkan.zombienado2.server.misc.FilterConstants;
 
+import java.awt.*;
 import java.util.*;
 import java.util.ArrayList;
+import java.util.List;
 
 import static com.erkan.zombienado2.graphics.Transform.*;
 
 public class Client extends ApplicationAdapter implements ConnectionListener, JoinGameListener, ContactListener {
+	private Sound sound_amb;
 	Texture ground;
 	World world;
 
@@ -83,9 +87,11 @@ public class Client extends ApplicationAdapter implements ConnectionListener, Jo
 		Weapon.init();
  		ground = new Texture("misc/test_ground.png");
  		ground.setFilter(Texture.TextureFilter.Linear, Texture.TextureFilter.Linear);
+		sound_amb = Gdx.audio.newSound(Gdx.files.internal("audio/misc/notification_amb.mp3"));
 
  		Zombie.init();
 		PhysicsHandler.init(this);
+		NotificationManager.init();
 		dDebugRenderer = new Box2DDebugRenderer();
 		debugRenderer = new ShapeRenderer();
 		font = new BitmapFont();
@@ -95,7 +101,7 @@ public class Client extends ApplicationAdapter implements ConnectionListener, Jo
 		batch = new SpriteBatch();
 		batch_hud = new SpriteBatch();
 
-		music = Gdx.audio.newSound(Gdx.files.internal("audio/music.mp3"));
+		music = Gdx.audio.newSound(Gdx.files.internal("audio/misc/bm2.mp3"));
 		music.loop();
 		music.play(.01f);
 
@@ -187,12 +193,15 @@ public class Client extends ApplicationAdapter implements ConnectionListener, Jo
 			ServerProxy.switch_weapon(WeaponData.ASSAULT_RIFLE);
 		}
 		if (Gdx.input.isKeyPressed(Input.Keys.NUM_5)) {
-			ServerProxy.switch_weapon(WeaponData.SHOTGUN_PUMP);
+			ServerProxy.switch_weapon(WeaponData.M249);
 		}
 		if (Gdx.input.isKeyPressed(Input.Keys.NUM_6)) {
-			ServerProxy.switch_weapon(WeaponData.SHOTGUN_AUTO);
+			ServerProxy.switch_weapon(WeaponData.SHOTGUN_PUMP);
 		}
 		if (Gdx.input.isKeyPressed(Input.Keys.NUM_7)) {
+			ServerProxy.switch_weapon(WeaponData.SHOTGUN_AUTO);
+		}
+		if (Gdx.input.isKeyPressed(Input.Keys.NUM_8)) {
 			ServerProxy.switch_weapon(WeaponData.SNIPER);
 		}
 
@@ -267,44 +276,60 @@ public class Client extends ApplicationAdapter implements ConnectionListener, Jo
 
 		Gdx.gl.glLineWidth(0.2f);
 		debugRenderer.setProjectionMatrix(camera.combined);
+		/*
 		debugRenderer.begin(ShapeRenderer.ShapeType.Line);
 		debugRenderer.setColor(new Color(.5f, 1f, .7f, .4f));
-		WorldManager.getNavigationGraph().getNodes().stream().forEach(v -> {
+
+		 WorldManager.getNavigationGraph().getNodes().stream().forEach(v -> {
 			Array<Connection<Vector2>> edges = WorldManager.getNavigationGraph().getConnections(v);
 			edges.forEach(e->{
 				debugRenderer.line(to_screen_space(e.getFromNode()), to_screen_space(e.getToNode()));
 			});
 		});
 		debugRenderer.end();
+
 		debugRenderer.begin(ShapeRenderer.ShapeType.Filled);
-		/*debugRenderer.setColor(new Color(.1f, .4f, 1f, .4f));
+		debugRenderer.setColor(new Color(.1f, .4f, 1f, .4f));
 		WorldManager.getNavigationGraph().getNodes().stream().forEach(v -> {
 			WorldManager.getNavigationGraph().getNodes().forEach(p ->{
 					debugRenderer.circle(to_screen_space(p.x), to_screen_space(p.y), 3);
 			});
 
 		});
-*/
-		debugRenderer.setColor(new Color(1f, .1f, .1f, .4f));
-		WorldManager.getNavigationGraph().getNodes().stream().forEach(v -> {
-			if (WorldManager.getNavigationGraph().visible_nodes != null){
-				WorldManager.getNavigationGraph().visible_nodes.forEach(p ->{
-						debugRenderer.circle(to_screen_space(p.x), to_screen_space(p.y), 5);
-				});
-			}
-		});
-		debugRenderer.end();
-
-
+		debugRenderer.end();*/
 		//dDebugRenderer.render(PhysicsHandler.getWorld(), camera.combined);
 
 		batch_hud.begin();
-
+		font.setColor(Color.WHITE);
+/*
 		font.draw(batch_hud, "Position: " + (int)(self.position.x * 10) / 10f + ", " + (int)(self.position.y * 10) / 10f, 5, Gdx.graphics.getHeight() - 5);
 		font.draw(batch_hud, "Wave: " + current_wave, 5, Gdx.graphics.getHeight() - 20);
 		font.draw(batch_hud, "cursor: " + Transform.scale_to_world(camera.position.x + (Gdx.input.getX() - Gdx.graphics.getWidth()/2)*camera.zoom) + ", " + Transform.scale_to_world(camera.position.y - (Gdx.input.getY() - Gdx.graphics.getHeight()/2)*camera.zoom), 5, Gdx.graphics.getHeight() - 35);
 		font.draw(batch_hud, "Health: " + self.getHealth() + "/" + self.MAX_HEALTH, 5, Gdx.graphics.getHeight() - 50);
+*/
+		Texture w_tex = new Texture(self.getWeapon().getWeaponData().texture_path);
+
+		batch_hud.draw(w_tex, camera.viewportWidth - 70 - 15, 40);
+		GlyphLayout glyphLayout = new GlyphLayout();
+		glyphLayout.setText(font, self.getWeapon().getWeaponData().name);
+		font.draw(batch_hud, self.getWeapon().getWeaponData().name, camera.viewportWidth  - 70 - glyphLayout.width, 90);
+		glyphLayout.setText(font, self.getAmmo()+"/"+self.getWeapon().getWeaponData().mag_size);
+		font.draw(batch_hud, self.getAmmo()+"/"+self.getWeapon().getWeaponData().mag_size, camera.viewportWidth - 70 - glyphLayout.width, 70);
+
+		font.draw(batch_hud, "Health:", 50, 90);
+		int hp_prec = (int)((self.getHealth() / self.MAX_HEALTH)*100);
+		if (hp_prec < 30)
+			font.setColor(Color.RED);
+		else if (hp_prec < 65)
+			font.setColor(Color.ORANGE);
+		font.draw(batch_hud, hp_prec+"%", 50, 70);
+
+		float w = camera.viewportWidth / 2;
+		float h = camera.viewportHeight - 100;
+		NotificationManager.draw(batch_hud, w, h);
 		batch_hud.end();
+
+		w_tex.dispose();
 	}
 	
 	@Override
@@ -348,6 +373,7 @@ public class Client extends ApplicationAdapter implements ConnectionListener, Jo
 						self.setWeapon(WeaponData.getWeapon(args[6]));
 						zoom_to = wd.scope;
 					}
+					self.setAmmo(Integer.parseInt(args[7]));
 					return;
 				}
 				teamMates[id].position.x = Float.parseFloat(args[2]);
@@ -359,6 +385,9 @@ public class Client extends ApplicationAdapter implements ConnectionListener, Jo
 					WeaponData wd = WeaponData.getWeapon(args[6]);
 					teamMates[id].setWeapon(wd);
 				}
+				teamMates[id].setAmmo(Integer.parseInt(args[7]));
+				Vector2 movement = new Vector2(Float.parseFloat(args[8]),Float.parseFloat(args[9]));
+				teamMates[id].run(movement);
 
 				break;
 			}
@@ -404,11 +433,12 @@ public class Client extends ApplicationAdapter implements ConnectionListener, Jo
 					}
 				break;
 			case ServerHeaders.WAVE_END:
-				System.out.println("Wave ended");
+				NotificationManager.post("Wave  "+args[1]+"  ended");
 				Zombie.fade();
 				break;
 			case ServerHeaders.WAVE_START:
-				System.out.println("Wave started");
+				SoundManager.addPrioSound(sound_amb, sound_amb.play());
+				NotificationManager.post("Wave  "+args[1]+"  started");
 				zombies.stream().forEach(zombie -> zombie.destroy()); //Potential problem
 				zombies = new ArrayList<>();
 				Zombie.reset_fade();
@@ -421,11 +451,17 @@ public class Client extends ApplicationAdapter implements ConnectionListener, Jo
 	public void beginContact(Contact contact) {
 		if (contact.getFixtureA().getFilterData().categoryBits == FilterConstants.ROOF_SENSOR){
 			((Structure)contact.getFixtureA().getUserData()).hide_roof();
-			effect_magnification = 0.65f;
+			Player p = (Player)contact.getFixtureB().getUserData();
+			p.setIndoor(true);
+			if (p.equals(self))
+				effect_magnification = 0.65f;
 		}
 		if (contact.getFixtureB().getFilterData().categoryBits == FilterConstants.ROOF_SENSOR){
 			((Structure)contact.getFixtureB().getUserData()).hide_roof();
-			effect_magnification = 0.65f;
+			Player p = (Player)contact.getFixtureA().getUserData();
+			p.setIndoor(true);
+			if (p.equals(self))
+				effect_magnification = 0.65f;
 		}
 	}
 
@@ -433,11 +469,17 @@ public class Client extends ApplicationAdapter implements ConnectionListener, Jo
 	public void endContact(Contact contact) {
 		if (contact.getFixtureA().getFilterData().categoryBits == FilterConstants.ROOF_SENSOR){
 			((Structure)contact.getFixtureA().getUserData()).show_roof();
-			effect_magnification = 1f;
+			Player p = (Player)contact.getFixtureB().getUserData();
+			p.setIndoor(false);
+			if (p.equals(self))
+				effect_magnification = 0.65f;
 		}
 		if (contact.getFixtureB().getFilterData().categoryBits == FilterConstants.ROOF_SENSOR){
 			((Structure)contact.getFixtureB().getUserData()).show_roof();
-			effect_magnification = 1f;
+			Player p = (Player)contact.getFixtureA().getUserData();
+			p.setIndoor(false);
+			if (p.equals(self))
+				effect_magnification = 0.65f;
 		}
 	}
 

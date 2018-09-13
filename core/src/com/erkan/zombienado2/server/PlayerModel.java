@@ -18,6 +18,7 @@ public class PlayerModel {
     public String character;
     public String name;
     public Body body;
+    public Vector2 movement_vector = new Vector2(0, 0);
     public float rotation;
     private float health;
 
@@ -37,7 +38,8 @@ public class PlayerModel {
         weapon.update(dt);
     }
 
-    public void setVelocity(Vector2 vel){
+    public void setVelocity(Vector2 vel) {
+        movement_vector = vel;
         body.setLinearVelocity(vel.scl(velocity));
     }
 

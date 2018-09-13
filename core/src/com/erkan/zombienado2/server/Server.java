@@ -195,7 +195,7 @@ public class Server implements ConnectionListener, ContactListener {
 
         for (int i = 0; i < players.length; i++) {
             PlayerModel player = players[i];
-            ConnectionManager.broadcast(ServerHeaders.UPDATE_PLAYER, i, player.body.getPosition().x, player.body.getPosition().y, player.rotation, player.getHealth(), player.weapon.getWeaponData().toString());
+            ConnectionManager.broadcast(ServerHeaders.UPDATE_PLAYER, i, player.body.getPosition().x, player.body.getPosition().y, player.rotation, player.getHealth(), player.weapon.getWeaponData().toString(), player.weapon.getClip(), player.movement_vector.x, player.movement_vector.y);
         }
 
 
@@ -228,7 +228,7 @@ public class Server implements ConnectionListener, ContactListener {
 
             if (zombies.size() < wave_size && zombie_spawn_accumulator > spawn_rate) {
                 zombie_spawn_accumulator -= spawn_rate;
-                Vector2 spawnpos = new Vector2(3 ,3);//Map.TEST_MAP.getRandomSpawnpoint();
+                Vector2 spawnpos = Map.TEST_MAP.getRandomSpawnpoint();
                 zombies.add(new Zombie(spawnpos.x, spawnpos.y, max_health));
             }
 
@@ -257,8 +257,7 @@ public class Server implements ConnectionListener, ContactListener {
                     zombie.setTarget(target_position);
                 } else if (zombie.position_reached()){
                     zombie.setBehavior(Zombie.Behavior.Roaming);
-                    List<Vector2> visible = WorldManager.getNavigationGraph().getVisibleNodes(zombie.getPosition().cpy());
-                    zombie.setTarget(visible.get(1));
+                    zombie.setTarget(new Vector2().setToRandomDirection().scl(MathUtils.random(5f)));
                 }
 
                 zombie.update(STEP_TIME);

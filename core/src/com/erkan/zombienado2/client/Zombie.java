@@ -165,7 +165,19 @@ public class Zombie {
         elapsed = 0;
         state = State.dying;
         body = null;
-        SoundManager.addSound(splatter, splatter.play());
+
+        //SOUND STUFF (it doesnt work very well)
+        float dx = Transform.scale_to_world(x) - Client.camera_world_coordinates.x;
+        float dy = Transform.scale_to_world(y) - Client.camera_world_coordinates.y;
+        Vector2 vec = new Vector2(dx, dy);
+        float distance2 = vec.len2();
+        float tmp = (100f - distance2)/100f;
+
+        float vol = (float)Math.max(0.1f, tmp);
+        float pan = vec.setLength(1f).x;
+
+        SoundManager.addSound(splatter, splatter.play(vol, 1, pan));
+        //END OF SOUND STUFF
 
         for (int i = 0; i < guts_parts.length; i++){
             guts_parts[i] = PhysicsHandler.createCircle(Transform.to_screen_space(com.erkan.zombienado2.server.Zombie.RADIUS), FilterConstants.PHYSICS_FIXTURE, (short)(FilterConstants.OBSTACLE_FIXTURE | FilterConstants.PLAYER_FIXTURE));

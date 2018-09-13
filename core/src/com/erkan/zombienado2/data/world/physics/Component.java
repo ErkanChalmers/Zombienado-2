@@ -13,7 +13,7 @@ public class Component implements Navigateable {
     public static final float LENGTH = 1.7f;
     public static final float DEPTH = .5f;
 
-    public static final float NAV_OFFSET = .5f;
+    public static final float NAV_OFFSET = LENGTH/2;
 
     public static final Component WALL_CORNER_TOP_LEFT;
     public static final Component WALL_CORNER_TOP_RIGHT;
@@ -43,38 +43,52 @@ public class Component implements Navigateable {
         WALL_CORNER_TOP_LEFT = new Component();
         WALL_CORNER_TOP_LEFT.addRectangle(0, LENGTH/2 - DEPTH/2, LENGTH/2, DEPTH/2);
         WALL_CORNER_TOP_LEFT.addRectangle(DEPTH/2 - LENGTH/2, 0, DEPTH/2, LENGTH/2);
+        WALL_CORNER_TOP_LEFT.addNavVector(new Vector2(LENGTH/2 + NAV_OFFSET, LENGTH/2 + NAV_OFFSET));
         WALL_CORNER_TOP_LEFT.addNavVector(new Vector2(-LENGTH/2 - NAV_OFFSET, LENGTH/2 + NAV_OFFSET));
-        WALL_CORNER_TOP_LEFT.addNavVector(new Vector2(LENGTH/2 + NAV_OFFSET, LENGTH/2-DEPTH/2));
-        WALL_CORNER_TOP_LEFT.addNavVector(new Vector2(-LENGTH/2 - NAV_OFFSET, LENGTH/2-DEPTH/2));
-        WALL_CORNER_TOP_LEFT.addNavVector(new Vector2(DEPTH/2 - LENGTH/2, LENGTH/2+NAV_OFFSET));
-        WALL_CORNER_TOP_LEFT.addNavVector(new Vector2(DEPTH/2 - LENGTH/2, -LENGTH/2-NAV_OFFSET));
+        WALL_CORNER_TOP_LEFT.addNavVector(new Vector2(LENGTH/2 + NAV_OFFSET, LENGTH/2 - DEPTH - NAV_OFFSET));
+        WALL_CORNER_TOP_LEFT.addNavVector(new Vector2(-LENGTH/2 - NAV_OFFSET, LENGTH/2 - DEPTH - NAV_OFFSET));
+        WALL_CORNER_TOP_LEFT.addNavVector(new Vector2(- LENGTH/2 - NAV_OFFSET, LENGTH/2+NAV_OFFSET));
+        WALL_CORNER_TOP_LEFT.addNavVector(new Vector2(- LENGTH/2 - NAV_OFFSET, -LENGTH/2-NAV_OFFSET));
+        WALL_CORNER_TOP_LEFT.addNavVector(new Vector2(DEPTH- LENGTH/2 + NAV_OFFSET, LENGTH/2+NAV_OFFSET));
+        WALL_CORNER_TOP_LEFT.addNavVector(new Vector2(DEPTH- LENGTH/2 + NAV_OFFSET, -LENGTH/2-NAV_OFFSET));
+
 
         WALL_CORNER_TOP_RIGHT = new Component();
         WALL_CORNER_TOP_RIGHT.addRectangle(0, LENGTH/2 - DEPTH/2, LENGTH/2, DEPTH/2);
         WALL_CORNER_TOP_RIGHT.addRectangle(LENGTH/2 - DEPTH/2, 0, DEPTH/2, LENGTH/2);
         WALL_CORNER_TOP_RIGHT.addNavVector(new Vector2(LENGTH/2 + NAV_OFFSET, LENGTH/2 + NAV_OFFSET));
-        WALL_CORNER_TOP_RIGHT.addNavVector(new Vector2(LENGTH/2 + NAV_OFFSET, LENGTH/2-DEPTH/2));
-        WALL_CORNER_TOP_RIGHT.addNavVector(new Vector2(-LENGTH/2 - NAV_OFFSET, LENGTH/2-DEPTH/2));
-        WALL_CORNER_TOP_RIGHT.addNavVector(new Vector2(LENGTH/2 - DEPTH/2, LENGTH/2+NAV_OFFSET));
-        WALL_CORNER_TOP_RIGHT.addNavVector(new Vector2(LENGTH/2 - DEPTH/2, -LENGTH/2-NAV_OFFSET));
+        WALL_CORNER_TOP_RIGHT.addNavVector(new Vector2(-LENGTH/2 - NAV_OFFSET, LENGTH/2 + NAV_OFFSET));
+        WALL_CORNER_TOP_RIGHT.addNavVector(new Vector2(LENGTH/2 + NAV_OFFSET, LENGTH/2 - DEPTH - NAV_OFFSET));
+        WALL_CORNER_TOP_RIGHT.addNavVector(new Vector2(-LENGTH/2 - NAV_OFFSET, LENGTH/2 - DEPTH - NAV_OFFSET));
+        WALL_CORNER_TOP_RIGHT.addNavVector(new Vector2(LENGTH/2 + NAV_OFFSET, LENGTH/2+NAV_OFFSET));
+        WALL_CORNER_TOP_RIGHT.addNavVector(new Vector2(LENGTH/2 + NAV_OFFSET, -LENGTH/2-NAV_OFFSET));
+        WALL_CORNER_TOP_RIGHT.addNavVector(new Vector2(LENGTH/2 - DEPTH - NAV_OFFSET, LENGTH/2+NAV_OFFSET));
+        WALL_CORNER_TOP_RIGHT.addNavVector(new Vector2(LENGTH/2 - DEPTH - NAV_OFFSET, -LENGTH/2-NAV_OFFSET));
 
         WALL_CORNER_BOTTOM_LEFT = new Component();
         WALL_CORNER_BOTTOM_LEFT.addRectangle(0, DEPTH/2-LENGTH/2, LENGTH/2, DEPTH/2);
         WALL_CORNER_BOTTOM_LEFT.addRectangle(DEPTH/2 - LENGTH/2, 0, DEPTH/2, LENGTH/2);
+        WALL_CORNER_BOTTOM_LEFT.addNavVector(new Vector2(LENGTH/2 + NAV_OFFSET, -LENGTH/2 - NAV_OFFSET));
         WALL_CORNER_BOTTOM_LEFT.addNavVector(new Vector2(-LENGTH/2 - NAV_OFFSET, -LENGTH/2 - NAV_OFFSET));
-        WALL_CORNER_BOTTOM_LEFT.addNavVector(new Vector2(LENGTH/2 + NAV_OFFSET, DEPTH/2-LENGTH/2));
-        WALL_CORNER_BOTTOM_LEFT.addNavVector(new Vector2(-LENGTH/2 - NAV_OFFSET, DEPTH/2-LENGTH/2));
-        WALL_CORNER_BOTTOM_LEFT.addNavVector(new Vector2(DEPTH/2 - LENGTH/2, LENGTH/2+NAV_OFFSET));
-        WALL_CORNER_BOTTOM_LEFT.addNavVector(new Vector2(DEPTH/2 - LENGTH/2, -LENGTH/2-NAV_OFFSET));
+        WALL_CORNER_BOTTOM_LEFT.addNavVector(new Vector2(LENGTH/2 + NAV_OFFSET, DEPTH-LENGTH/2 + NAV_OFFSET));
+        WALL_CORNER_BOTTOM_LEFT.addNavVector(new Vector2(-LENGTH/2 - NAV_OFFSET, DEPTH-LENGTH/2 + NAV_OFFSET));
+        WALL_CORNER_BOTTOM_LEFT.addNavVector(new Vector2(- LENGTH/2 - NAV_OFFSET, LENGTH/2+NAV_OFFSET));
+        WALL_CORNER_BOTTOM_LEFT.addNavVector(new Vector2(- LENGTH/2 - NAV_OFFSET, -LENGTH/2-NAV_OFFSET));
+        WALL_CORNER_BOTTOM_LEFT.addNavVector(new Vector2(DEPTH- LENGTH/2 + NAV_OFFSET, LENGTH/2+NAV_OFFSET));
+        WALL_CORNER_BOTTOM_LEFT.addNavVector(new Vector2(DEPTH- LENGTH/2 + NAV_OFFSET, -LENGTH/2-NAV_OFFSET));
 
         WALL_CORNER_BOTTOM_RIGHT = new Component();
         WALL_CORNER_BOTTOM_RIGHT.addRectangle(0, DEPTH/2-LENGTH/2, LENGTH/2, DEPTH/2);
         WALL_CORNER_BOTTOM_RIGHT.addRectangle(LENGTH/2 - DEPTH/2, 0, DEPTH/2, LENGTH/2);
         WALL_CORNER_BOTTOM_RIGHT.addNavVector(new Vector2(LENGTH/2 + NAV_OFFSET, -LENGTH/2 - NAV_OFFSET));
-        WALL_CORNER_BOTTOM_RIGHT.addNavVector(new Vector2(LENGTH/2 + NAV_OFFSET, DEPTH/2-LENGTH/2));
-        WALL_CORNER_BOTTOM_RIGHT.addNavVector(new Vector2(-LENGTH/2 - NAV_OFFSET, DEPTH/2-LENGTH/2));
-        WALL_CORNER_BOTTOM_RIGHT.addNavVector(new Vector2(LENGTH/2 - DEPTH/2, LENGTH/2+NAV_OFFSET));
-        WALL_CORNER_BOTTOM_RIGHT.addNavVector(new Vector2(LENGTH/2 - DEPTH/2, -LENGTH/2-NAV_OFFSET));
+        WALL_CORNER_BOTTOM_RIGHT.addNavVector(new Vector2(-LENGTH/2 - NAV_OFFSET, -LENGTH/2 - NAV_OFFSET));
+        WALL_CORNER_BOTTOM_RIGHT.addNavVector(new Vector2(LENGTH/2 + NAV_OFFSET, DEPTH-LENGTH/2 + NAV_OFFSET));
+        WALL_CORNER_BOTTOM_RIGHT.addNavVector(new Vector2(-LENGTH/2 - NAV_OFFSET, DEPTH-LENGTH/2 + NAV_OFFSET));
+        WALL_CORNER_BOTTOM_RIGHT.addNavVector(new Vector2(LENGTH/2 + NAV_OFFSET, LENGTH/2+NAV_OFFSET));
+        WALL_CORNER_BOTTOM_RIGHT.addNavVector(new Vector2(LENGTH/2 + NAV_OFFSET, -LENGTH/2-NAV_OFFSET));
+        WALL_CORNER_BOTTOM_RIGHT.addNavVector(new Vector2(LENGTH/2 - DEPTH - NAV_OFFSET, LENGTH/2+NAV_OFFSET));
+        WALL_CORNER_BOTTOM_RIGHT.addNavVector(new Vector2(LENGTH/2 - DEPTH - NAV_OFFSET, -LENGTH/2-NAV_OFFSET));
+
 
         //STANDARD
         WALL_TOP = new Component();

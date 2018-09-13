@@ -3,6 +3,7 @@ package com.erkan.zombienado2.client;
 import box2dLight.ConeLight;
 import box2dLight.PointLight;
 import com.badlogic.gdx.Gdx;
+import com.badlogic.gdx.audio.Sound;
 import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.g2d.Animation;
 import com.badlogic.gdx.graphics.g2d.Sprite;
@@ -24,6 +25,22 @@ import static com.erkan.zombienado2.graphics.Transform.*;
  * Created by Erik on 2018-07-30.
  */
 public abstract class Player {
+    protected static Sound[] walk_sound_outdoor = {
+            Gdx.audio.newSound(Gdx.files.internal("audio/step_lth1.ogg")),
+            Gdx.audio.newSound(Gdx.files.internal("audio/step_lth2.ogg")),
+            Gdx.audio.newSound(Gdx.files.internal("audio/step_lth3.ogg")),
+            Gdx.audio.newSound(Gdx.files.internal("audio/step_lth4.ogg"))
+    };
+    protected static Sound[] walk_sound_indoor = {
+            Gdx.audio.newSound(Gdx.files.internal("audio/step_cloth1.ogg")),
+            Gdx.audio.newSound(Gdx.files.internal("audio/step_cloth2.ogg")),
+            Gdx.audio.newSound(Gdx.files.internal("audio/step_cloth3.ogg")),
+            Gdx.audio.newSound(Gdx.files.internal("audio/step_cloth4.ogg"))
+    };
+
+    protected Sound[] walk_sound = walk_sound_outdoor;
+
+
     public static final float MAX_HEALTH = 50f;
 
     private boolean init_done;
@@ -45,6 +62,22 @@ public abstract class Player {
     public float distance_to_focus = to_screen_space(10);
     private float health;
 
+    private int current_ammo = 0;
+
+    public void setAmmo(int ammo){
+        current_ammo = ammo;
+    }
+
+    public int getAmmo(){
+        return current_ammo;
+    }
+
+    public void setIndoor(boolean indoor){
+        if (indoor)
+            walk_sound = walk_sound_indoor;
+        else
+            walk_sound = walk_sound_outdoor;
+    }
 
     private Vector2 direction = new Vector2();
 
@@ -57,6 +90,7 @@ public abstract class Player {
         this.character = character;
         this.torso = new Sprite(character.torso_1h);
         this.body = PhysicsHandler.createCircle(to_screen_space(PlayerModel.RADIUS), FilterConstants.PLAYER_FIXTURE, (short)(FilterConstants.LIGHT | FilterConstants.PHYSICS_FIXTURE));
+        body.getFixtureList().get(0).setUserData(this);
         flash_light = PhysicsHandler.createConeLight(to_screen_space(position.x), to_screen_space(position.y), new Color(.45f,.45f,.45f,.95f), to_screen_space(8), rotation, 25);
         //flash_focus = PhysicsHandler.createPointLight(to_screen_space(position.x), to_screen_space(position.y), new Color(.45f, .45f, .45f, .95f), 300);
         muzzle_elumination = PhysicsHandler.createPointLight(to_screen_space(position.x), to_screen_space(position.y), new Color(1,1,0,1f), 400);

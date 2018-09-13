@@ -70,6 +70,9 @@ public class Map {
         TEST_MAP.structures.add(new Tuple<>(new BoxData(4, -15, 0, Prefabs.HOUSE_2), Structure.BuildType.BRICK));
         TEST_MAP.structures.add(new Tuple<>(new BoxData(2, 17, -7, Prefabs.OFFICE_BUILDING), Structure.BuildType.BRICK));
 
+        //TEST
+        //TEST_MAP.structures.add(new Tuple<>(new BoxData(10, 0, 0, Prefabs.TEST), Structure.BuildType.BRICK));
+
         TEST_MAP.walls.add(new Tuple<>(new Boundary(new Vector2(11.2f, -9.3f),new Vector2(16.5f, -9.4f )), Wall.Type.BARBED_WIRE));
         TEST_MAP.walls.add(new Tuple<>(new Boundary(new Vector2(24f, 19.7f),new Vector2(24f, 22f )), Wall.Type.WOOD_FENCE));
         TEST_MAP.walls.add(new Tuple<>(new Boundary(new Vector2(7.9f, 25.4f),new Vector2(16.0f, 24.8f )), Wall.Type.BARBED_WIRE));

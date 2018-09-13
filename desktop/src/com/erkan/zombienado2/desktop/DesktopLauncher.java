@@ -1,5 +1,7 @@
 package com.erkan.zombienado2.desktop;
 
+import com.badlogic.gdx.Files;
+import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.backends.lwjgl.LwjglApplication;
 import com.badlogic.gdx.backends.lwjgl.LwjglApplicationConfiguration;
 import com.erkan.zombienado2.client.Client;
@@ -13,6 +15,7 @@ public class DesktopLauncher {
 		System.out.println("Launcher: creating client");
 		LwjglApplicationConfiguration client_configuration = new LwjglApplicationConfiguration();
 		client_configuration.title = "Zombienado 2";
+		client_configuration.addIcon("ui/icon.png", Files.FileType.Internal);
 		client_configuration.width = 1920;
 		client_configuration.height = 1080;
 		//client_configuration.fullscreen = true;
