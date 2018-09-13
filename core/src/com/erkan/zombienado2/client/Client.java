@@ -61,6 +61,7 @@ public class Client extends ApplicationAdapter implements ConnectionListener, Jo
 
 
 	static Vector3 camera_world_coordinates = new Vector3(); //used for sound calculations ://// not nice
+	static float camera_zoom = 1f;
 
 	OrthographicCamera camera;
 	Self self;
@@ -102,8 +103,7 @@ public class Client extends ApplicationAdapter implements ConnectionListener, Jo
 		batch_hud = new SpriteBatch();
 
 		music = Gdx.audio.newSound(Gdx.files.internal("audio/misc/bm2.mp3"));
-		music.loop();
-		music.play(.01f);
+
 
 
 
@@ -224,6 +224,7 @@ public class Client extends ApplicationAdapter implements ConnectionListener, Jo
 		camera.update();
 		camera_world_coordinates.x = Transform.scale_to_world(camera.position.x);
 		camera_world_coordinates.y = Transform.scale_to_world(camera.position.y);
+		camera_zoom = zoom;
 
 		batch.setProjectionMatrix(camera.combined);
 		Gdx.gl.glClearColor(.3f, .3f, .3f, 1);
@@ -307,6 +308,10 @@ public class Client extends ApplicationAdapter implements ConnectionListener, Jo
 		font.draw(batch_hud, "cursor: " + Transform.scale_to_world(camera.position.x + (Gdx.input.getX() - Gdx.graphics.getWidth()/2)*camera.zoom) + ", " + Transform.scale_to_world(camera.position.y - (Gdx.input.getY() - Gdx.graphics.getHeight()/2)*camera.zoom), 5, Gdx.graphics.getHeight() - 35);
 		font.draw(batch_hud, "Health: " + self.getHealth() + "/" + self.MAX_HEALTH, 5, Gdx.graphics.getHeight() - 50);
 */
+
+		if (teamMates != null)
+			Arrays.stream(teamMates).forEach(teamMate -> {if (teamMate != null) teamMate.hud_draw(batch_hud, font);});
+
 		Texture w_tex = new Texture(self.getWeapon().getWeaponData().texture_path);
 
 		batch_hud.draw(w_tex, camera.viewportWidth - 70 - 15, 40);
@@ -353,6 +358,7 @@ public class Client extends ApplicationAdapter implements ConnectionListener, Jo
 				my_id = Integer.parseInt(args[1]);
 				System.out.println("My id is: "+my_id);
 				teamMates = new TeamMate[Integer.parseInt(args[2])];
+				music.loop();
 				started = true;
 				break;
 			case ServerHeaders.JOIN_PLAYER:
@@ -472,14 +478,14 @@ public class Client extends ApplicationAdapter implements ConnectionListener, Jo
 			Player p = (Player)contact.getFixtureB().getUserData();
 			p.setIndoor(false);
 			if (p.equals(self))
-				effect_magnification = 0.65f;
+				effect_magnification = 1f;
 		}
 		if (contact.getFixtureB().getFilterData().categoryBits == FilterConstants.ROOF_SENSOR){
 			((Structure)contact.getFixtureB().getUserData()).show_roof();
 			Player p = (Player)contact.getFixtureA().getUserData();
 			p.setIndoor(false);
 			if (p.equals(self))
-				effect_magnification = 0.65f;
+				effect_magnification = 1f;
 		}
 	}
 
