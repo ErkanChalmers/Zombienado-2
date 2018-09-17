@@ -1,4 +1,4 @@
-package com.erkan.zombienado2.client;
+package com.erkan.zombienado2.client.menus;
 
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.graphics.Color;
@@ -15,12 +15,13 @@ import com.badlogic.gdx.scenes.scene2d.utils.ClickListener;
 import com.badlogic.gdx.scenes.scene2d.utils.SpriteDrawable;
 import com.badlogic.gdx.scenes.scene2d.utils.TextureRegionDrawable;
 import com.badlogic.gdx.utils.Align;
+import com.erkan.zombienado2.client.JoinGameListener;
 import com.erkan.zombienado2.server.Server;
 
 /**
  * Created by Erik on 2018-08-16.
  */
-public class MainMenu {
+public class MainMenu extends Menu {
 
     Texture bg_main;
     Texture bg_host;
@@ -37,12 +38,9 @@ public class MainMenu {
     Stage hostStage;
     Stage connectStage;
 
-    JoinGameListener jg;
-
-    public MainMenu(JoinGameListener listener){
-        jg = listener;
+    public MainMenu(JoinGameListener listener) {
+        super(listener);
     }
-
 
     public void create(){
         skin = new Skin(Gdx.files.internal("ui/skin/biological-attack-ui.json"));

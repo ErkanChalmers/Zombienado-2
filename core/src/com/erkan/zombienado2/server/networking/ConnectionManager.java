@@ -45,6 +45,7 @@ public class ConnectionManager {
 
                 send(identifier, "CONNECT");
                 send(identifier, "Identifier: "+identifier);
+                cl.connect(identifier, newConnection);
                 listen(newConnection, identifier);
 
             } catch (IOException e) {
@@ -130,5 +131,13 @@ public class ConnectionManager {
                 }
             }).start();
 
+    }
+
+    public static List<String> getConnections(){
+        List<String> connections = new ArrayList<>();
+        for (Socket socket: clients) {
+            connections.add(socket.getRemoteSocketAddress().toString());
+        }
+        return connections;
     }
 }

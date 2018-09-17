@@ -74,7 +74,7 @@ public class WorldManager {
         Body body = world.createBody(def);
         body.createFixture(fix);
         body.setTransform(rectangle.getX(), rectangle.getY(), MathUtils.degreesToRadians * (rectangle.getR()+90));
-        System.out.println(rectangle.getX() +" "+rectangle.getY());
+
         shape.dispose();
         return body;
     }

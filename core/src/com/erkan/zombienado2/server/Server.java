@@ -10,11 +10,15 @@ import com.erkan.zombienado2.data.world.Map;
 import com.erkan.zombienado2.data.weapons.WeaponData;
 import com.erkan.zombienado2.graphics.Transform;
 import com.erkan.zombienado2.networking.ServerHeaders;
+import com.erkan.zombienado2.server.loots.Loot;
+import com.erkan.zombienado2.server.loots.MedPack;
+import com.erkan.zombienado2.server.loots.WeaponPack;
 import com.erkan.zombienado2.server.misc.FilterConstants;
 import com.erkan.zombienado2.server.networking.ConnectionListener;
 import com.erkan.zombienado2.server.networking.ConnectionManager;
 
 import java.net.Socket;
+import java.sql.Connection;
 import java.util.*;
 
 /**
@@ -29,10 +33,17 @@ public class Server implements ConnectionListener, ContactListener {
     PlayerModel[] players;
     List<Body> alive_bullets = new LinkedList<>();
     List<Zombie> zombies = new LinkedList<>();
+    List<Loot> loot = new LinkedList<>();
+    List<Vector2> addLootList = new LinkedList<>();
 
     int wave = 1;
     boolean wave_ongoing = false;
     float between_wave_timer = 0;
+
+    int score = 0;
+    boolean game_over = false;
+
+
     public final float TIME_BETWEEN_WAVES = 10f;
 
 
@@ -52,7 +63,6 @@ public class Server implements ConnectionListener, ContactListener {
             }
         });
         WorldManager.getNavigationGraph().construct();
-
         //has to be done last i think, because context need to be initialized (eg world)
         ConnectionManager.init(this, PORT);
         ConnectionManager.accept(CLIENTS_TO_ACCEPT);
@@ -69,51 +79,75 @@ public class Server implements ConnectionListener, ContactListener {
                     createPlayer(arguments[1], arguments[2], identifier);
                 break;
             case "move":
-                players[identifier].setVelocity(new Vector2(Float.parseFloat(arguments[1]), Float.parseFloat(arguments[2])));
+                if (players[identifier].is_alive())
+                    players[identifier].setVelocity(new Vector2(Float.parseFloat(arguments[1]), Float.parseFloat(arguments[2])));
                 break;
             case "rotate":
-                players[identifier].setRotation(Float.parseFloat(arguments[1]));
+                if (players[identifier].is_alive())
+                    players[identifier].setRotation(Float.parseFloat(arguments[1]));
                 break;
             case "fire":
+                if (!players[identifier].is_alive())
+                    break;
                 synchronized (this) { //Woops, retarded code below
-                    if (players[identifier].weapon.fire()) {
-                        if (players[identifier].weapon.getWeaponData().bullets_per_round == 1) {
-                            float recoiled_rotation = players[identifier].rotation + (float) (Math.random() - .5f) * players[identifier].weapon.getCurrent_spread();
+                    if (players[identifier].getWeapon().fire()) {
+                        if (players[identifier].getWeapon().getWeaponData().bullets_per_round == 1) {
+                            float recoiled_rotation = players[identifier].rotation + (float) (Math.random() - .5f) * players[identifier].getWeapon().getCurrent_spread() * (players[identifier].isMoving() ? WeaponModel.MOVEMENT_MULTIPLIER : 1);
                             float dx = (float) Math.cos(Math.toRadians(recoiled_rotation));
                             float dy = (float) Math.sin(Math.toRadians(recoiled_rotation));
                             Vector2 dir = new Vector2(dx, dy);
                             Vector2 origin = new Vector2(players[identifier].body.getPosition().x + (float) Math.cos(Math.toRadians(players[identifier].rotation - 10f)) * .5f, players[identifier].body.getPosition().y + (float) Math.sin(Math.toRadians(players[identifier].rotation - 10f)) * .5f);
-                            alive_bullets.add(BulletFactory.createBullet(origin, dir, players[identifier].weapon.getWeaponData().damage, identifier));
+                            alive_bullets.add(BulletFactory.createBullet(origin, dir, players[identifier].getWeapon().getWeaponData().damage, identifier));
                         } else {
-                            int bullets = players[identifier].weapon.getWeaponData().bullets_per_round;
-                            float spacing_angle = players[identifier].weapon.getWeaponData().spread / (float)bullets;
+                            int bullets = players[identifier].getWeapon().getWeaponData().bullets_per_round;
+                            float spacing_angle = players[identifier].getWeapon().getWeaponData().spread / (float)bullets;
                             for (int i = 0; i < bullets; i++) {
 
-                                float recoiled_rotation = players[identifier].rotation - players[identifier].weapon.getWeaponData().spread / 2  + (float) spacing_angle * i + (float)(Math.random()-.5f) * players[identifier].weapon.getWeaponData().recoil;
+                                float recoiled_rotation = players[identifier].rotation - players[identifier].getWeapon().getWeaponData().spread / 2  + (float) spacing_angle * i + (float)(Math.random()-.5f) * players[identifier].getWeapon().getWeaponData().recoil;
                                 float dx = (float) Math.cos(Math.toRadians(recoiled_rotation));
                                 float dy = (float) Math.sin(Math.toRadians(recoiled_rotation));
                                 Vector2 dir = new Vector2(dx, dy);
                                 Vector2 origin = new Vector2(players[identifier].body.getPosition().x + (float) Math.cos(Math.toRadians(players[identifier].rotation - 10f)) * .5f, players[identifier].body.getPosition().y + (float) Math.sin(Math.toRadians(players[identifier].rotation - 10f)) * .5f);
-                                alive_bullets.add(BulletFactory.createBullet(origin, dir, players[identifier].weapon.getWeaponData().damage, identifier));
+                                alive_bullets.add(BulletFactory.createBullet(origin, dir, players[identifier].getWeapon().getWeaponData().damage, identifier));
                             }
                         }
                         ConnectionManager.broadcast(ServerHeaders.CREATE_BULLET, identifier); //for fx and stuff
-                    } else if (players[identifier].weapon.getClip() == 0){
+                    } else if (players[identifier].getWeapon().getClip() == 0){
                         onMsgReceive(identifier,"reload"); //selfcall to reload if out of amo
                     }
                 }
                 break;
             case "reload":
-                if (players[identifier].weapon.reload()){
+                if (!players[identifier].is_alive())
+                    break;
+                if (players[identifier].getWeapon().reload()){
                     ConnectionManager.broadcast(ServerHeaders.PLAYER_RELOAD, identifier);
                 }
                 break;
             case "switch_weapon":
-                if (!players[identifier].weapon.getWeaponData().toString().equals(arguments[1])) {
-                    players[identifier].weapon = new WeaponModel(WeaponData.getWeapon(arguments[1]));
-                }
+                if (!players[identifier].is_alive())
+                    break;
+                players[identifier].switchWeapon();
+                break;
+            case "ping":
+                ConnectionManager.send(identifier, "ok");
                 break;
         }
+    }
+
+    @Override
+    public void connect(int identifier, Socket socket){
+        ConnectionManager.send(identifier, ServerHeaders.JOIN_SELF +" " + identifier + " "+ CLIENTS_TO_ACCEPT);
+        ConnectionManager.getConnections().forEach(con -> {
+            ConnectionManager.send(identifier, ServerHeaders.CONNECT_TO_LOBBY + " " + con);
+        });
+        for (int i = 0; i < players.length; i++) {
+            PlayerModel player = players[i];
+            if (player != null)
+                ConnectionManager.send(identifier, ServerHeaders.JOIN_PLAYER +" " + i+" "+ player.name+ " " + player.character);
+        }
+
+        ConnectionManager.broadcast(ServerHeaders.CONNECT_TO_LOBBY, socket.getRemoteSocketAddress().toString());
     }
 
     /**
@@ -130,10 +164,17 @@ public class Server implements ConnectionListener, ContactListener {
         }
     }
 
+
     public void createPlayer(String name, String character, int identifier){
         players[identifier] = new PlayerModel(name, character);
         players[identifier].body.setTransform(5f,5f, 0f);
-        ConnectionManager.send(identifier, ServerHeaders.JOIN_SELF +" " + identifier + " "+ CLIENTS_TO_ACCEPT);
+        ConnectionManager.broadcast(ServerHeaders.JOIN_PLAYER, identifier, players[identifier].name, players[identifier].character);
+      /*  for (int i = 0; i < players.length; i++) {
+            PlayerModel player = players[i];
+            if (player != null)
+                ConnectionManager.send(identifier, ServerHeaders.JOIN_PLAYER + " " + i + " " + player.name + " " + player.character); //send to self that other have joined
+        } */
+
         for (int i = 0; i < players.length; i++){
             if (players[i] == null)
                 return;
@@ -144,11 +185,13 @@ public class Server implements ConnectionListener, ContactListener {
     }
 
     public void launch(){
+        /*
         for (int i = 0; i < players.length; i++) {
             PlayerModel player = players[i];
             ConnectionManager.broadcast(ServerHeaders.JOIN_PLAYER, i, player.name, player.character);
         }
-
+*/
+        ConnectionManager.broadcast(ServerHeaders.LAUNCH_GAME);
         startTickSequence();
     }
 
@@ -178,6 +221,9 @@ public class Server implements ConnectionListener, ContactListener {
 
     float zombie_spawn_accumulator = 0;
     public void tick(){
+        if(game_over)
+            return;
+
 
         float delta = STEP_TIME;//Gdx.graphics.getDeltaTime();
         accumulator += Math.min(delta, 0.25f);
@@ -193,11 +239,18 @@ public class Server implements ConnectionListener, ContactListener {
             player.update(delta);
         }
 
+        boolean allPlayersDead = true;
         for (int i = 0; i < players.length; i++) {
             PlayerModel player = players[i];
-            ConnectionManager.broadcast(ServerHeaders.UPDATE_PLAYER, i, player.body.getPosition().x, player.body.getPosition().y, player.rotation, player.getHealth(), player.weapon.getWeaponData().toString(), player.weapon.getClip(), player.movement_vector.x, player.movement_vector.y);
+            ConnectionManager.broadcast(ServerHeaders.UPDATE_PLAYER, i, player.body.getPosition().x, player.body.getPosition().y, player.rotation, player.getHealth(), player.getWeapon().getWeaponData().toString(), player.getWeapon().getClip(), player.getWeapon().getExcessAmmo(), player.movement_vector.x, player.movement_vector.y, player.is_alive());
+            if (player.is_alive())
+                allPlayersDead = false;
         }
 
+        if (allPlayersDead){
+            gameOver();
+            return;
+        }
 
         long now = System.currentTimeMillis();
         synchronized (this) {
@@ -215,6 +268,27 @@ public class Server implements ConnectionListener, ContactListener {
                 } else {
                     sb.append(" " + bullet.getPosition().x + " " + bullet.getPosition().y + " " + bullet.getLinearVelocity().x + " " + bullet.getLinearVelocity().y);
                 }
+            }
+            ConnectionManager.broadcast(sb.toString());
+        }
+
+        for (Vector2 vec : addLootList) {
+            loot.add(new MedPack(vec.x, vec.y, false));
+        }
+        addLootList = new ArrayList<>();
+
+        synchronized (this) {
+            StringBuilder sb = new StringBuilder();
+            sb.append(ServerHeaders.UPDATE_LOOT);
+            Iterator<Loot> loot_iterator = loot.iterator();
+
+            while (loot_iterator.hasNext()) {
+                Loot loot = loot_iterator.next();
+                if (loot.shouldBeRemoved(System.currentTimeMillis())){
+                    loot.destroy();
+                    loot_iterator.remove();
+                } else
+                    sb.append(" " + loot.getX() + " " + loot.getY() + " " + loot.toString());
             }
             ConnectionManager.broadcast(sb.toString());
         }
@@ -243,6 +317,8 @@ public class Server implements ConnectionListener, ContactListener {
                 Vector2 target_position = null;
 
                 for (PlayerModel player : players) {
+                    if (!player.is_alive())
+                        continue;
                     Vector2 zp = zombie.getPosition().cpy();
                     Vector2 pp = new Vector2(player.body.getPosition().x, player.body.getPosition().y);
                     Vector2 dist = pp.cpy().sub(zp);
@@ -278,7 +354,29 @@ public class Server implements ConnectionListener, ContactListener {
         }
     }
 
+    private void gameOver(){
+        ConnectionManager.broadcast(ServerHeaders.GAME_OVER, score);
+        game_over = true;
+        //TODO: close Connection and exit
+    }
+
     private void startWave(){
+        Map.TEST_MAP.getLootPoints().stream().forEach(pos -> {
+            float chance = MathUtils.random(5f);
+            /*boolean occupied = false;
+            WorldManager.getWorld().QueryAABB(f -> {
+                if (f.isSensor()){
+                    occupied = true;
+                }
+            }, pos.x, pos.y, pos.x, pos.y);
+            */
+            if (chance < 2)
+                loot.add(new WeaponPack(pos.x, pos.y, true));
+            else if (chance < 4)
+                loot.add(new MedPack(pos.x, pos.y, true));
+
+        });
+
         ConnectionManager.broadcast(ServerHeaders.WAVE_START, wave);
         between_wave_timer = 0;
         wave_ongoing = true;
@@ -291,12 +389,29 @@ public class Server implements ConnectionListener, ContactListener {
         wave++;
         zombies.stream().forEach(zombie -> zombie.destroy());
         zombies = new LinkedList<>();
+
         zombie_spawn_accumulator = 0;
+        score += 25;
+
+        for (PlayerModel player: players) {
+            if (!player.is_alive())
+                player.addHealth(20f);
+        }
     }
 
     @Override
     public void beginContact(Contact contact) {
+        if (contact.getFixtureA().getFilterData().categoryBits == FilterConstants.LOOT_FIXTURE){
+            if (contact.getFixtureB().getFilterData().categoryBits == FilterConstants.PLAYER_FIXTURE){
+                ((Loot)contact.getFixtureA().getBody().getUserData()).pickup(((PlayerModel)contact.getFixtureB().getBody().getUserData()));
+            }
+        }
 
+        if (contact.getFixtureB().getFilterData().categoryBits == FilterConstants.LOOT_FIXTURE){
+            if (contact.getFixtureA().getFilterData().categoryBits == FilterConstants.PLAYER_FIXTURE){
+                ((Loot)contact.getFixtureB().getBody().getUserData()).pickup(((PlayerModel)contact.getFixtureA().getBody().getUserData()));
+            }
+        }
     }
 
     @Override
@@ -316,7 +431,13 @@ public class Server implements ConnectionListener, ContactListener {
                 zombie.setBehavior(Zombie.Behavior.Hunting);
                 dmg = zombie.takeDamage(dmg);
                 if (dmg < 0){
+
+                    if (MathUtils.random(10f) < 1f){
+                        addLootList.add(new Vector2(zombie.getPosition().x, zombie.getPosition().y));
+                    }
+
                     dmg = Math.abs(dmg);
+                    score += 3;
                 } else
                     dmg = 0;
             } else {
@@ -336,7 +457,13 @@ public class Server implements ConnectionListener, ContactListener {
                 zombie.setBehavior(Zombie.Behavior.Hunting);
                 dmg = zombie.takeDamage(dmg);
                 if (dmg < 0){
+
+                    if (MathUtils.random(10f) < 1f){
+                       addLootList.add(new Vector2(zombie.getPosition().x, zombie.getPosition().y));
+                    }
+
                     dmg = Math.abs(dmg);
+                    score += 3;
                 } else
                     dmg = 0;
             } else {

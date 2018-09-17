@@ -55,10 +55,12 @@ public class ServerProxy {
         }
     }
 
+    public static void ping(){
+        send("ping");
+    }
     public static void join(String name, String character){
         send("create "+name+" "+character);
     }
-
     public static void move(Vector2 movementvector){
         send("move "+movementvector.x + " " + movementvector.y);
     }
@@ -73,7 +75,7 @@ public class ServerProxy {
     public static void reload(){
         send("reload");
     }
-    public static void switch_weapon(WeaponData wd){
-        send("switch_weapon "+wd.toString());
+    public static void switch_weapon(){
+        send("switch_weapon");
     }
 }

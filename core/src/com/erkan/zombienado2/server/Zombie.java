@@ -14,7 +14,7 @@ import com.erkan.zombienado2.server.misc.FilterConstants;
 public class Zombie {
     public static final float DEF_SPAWN_RATE = .1f;
     public static final float DEF_WAVE_SIZE = 40;
-    public static final float DEF_MAX_HEALTH = 10;
+    public static final float DEF_MAX_HEALTH = 20;
     private static final float ATTACK_TIME = .5f;
 
     public static final float RADIUS = .3f;
@@ -73,8 +73,9 @@ public class Zombie {
 
     public float takeDamage(float dmg){
         health -= dmg;
-        float left = health;
+        float left = 0;
         if (health <= 0) {
+            left = health;
             health = 0;
             die();
         }
@@ -209,9 +210,10 @@ public class Zombie {
 
             }
 
-            Vector2 dir = sub_target.cpy().sub(body.getPosition().cpy()).setLength(1);
-            body.setLinearVelocity(dir.scl(behavior.equals(Behavior.Hunting) ? VELOCITY : ROAM_VELOCITY));
-            rotation = dir.angle();
+                Vector2 dir = sub_target.cpy().sub(body.getPosition().cpy()).setLength(1);
+                body.setLinearVelocity(dir.scl(behavior.equals(Behavior.Hunting) ? VELOCITY : ROAM_VELOCITY));
+                rotation = dir.angle();
+
 
             time_since_pathfind += dt;
         }

@@ -40,6 +40,7 @@ public abstract class Player {
 
     protected Sound[] walk_sound = walk_sound_outdoor;
 
+    protected Sound change_weapon = Gdx.audio.newSound(Gdx.files.internal("audio/weapon_change.mp3"));
 
     public static final float MAX_HEALTH = 50f;
 
@@ -61,8 +62,28 @@ public abstract class Player {
     private boolean isshooting = false;
     public float distance_to_focus = to_screen_space(10);
     private float health;
-
+    private boolean alive = true;
     private int current_ammo = 0;
+    private int excess_ammo = 0;
+
+    public void setAlive(boolean alive){
+        if (this.alive && !alive){
+            //TODO: die
+            NotificationManager.post("You are dead");
+            flash_light.setColor(new Color(1f,1f,1f,0f));
+        }
+
+        if (!this.alive && alive){
+            //TODO: respawn
+            flash_light.setColor(new Color(1f,1f,1f,1f));
+        }
+
+        this.alive = alive;
+    }
+
+    public boolean isAlive(){
+        return alive;
+    }
 
     public void setAmmo(int ammo){
         current_ammo = ammo;
@@ -70,6 +91,14 @@ public abstract class Player {
 
     public int getAmmo(){
         return current_ammo;
+    }
+
+    public void setExcessAmmo(int ammo){
+        excess_ammo = ammo;
+    }
+
+    public int getExcessAmmo(){
+        return excess_ammo;
     }
 
     public void setIndoor(boolean indoor){
@@ -91,7 +120,9 @@ public abstract class Player {
         this.torso = new Sprite(character.torso_1h);
         this.body = PhysicsHandler.createCircle(to_screen_space(PlayerModel.RADIUS), FilterConstants.PLAYER_FIXTURE, (short)(FilterConstants.LIGHT | FilterConstants.PHYSICS_FIXTURE));
         body.getFixtureList().get(0).setUserData(this);
-        flash_light = PhysicsHandler.createConeLight(to_screen_space(position.x), to_screen_space(position.y), new Color(.45f,.45f,.45f,.95f), to_screen_space(8), rotation, 25);
+        flash_light = PhysicsHandler.createConeLight(to_screen_space(position.x), to_screen_space(position.y), new Color(1f,1f,1f,1f), to_screen_space(8), rotation, 25);
+        halo = PhysicsHandler.createPointLight(0, 0, new Color(.55f,.55f,.45f,.35f), to_screen_space(1.5f));
+        halo.setContactFilter(FilterConstants.TOP_LIGHT, FilterConstants.TOP_LIGHT, FilterConstants.OBSTACLE_FIXTURE);
         //flash_focus = PhysicsHandler.createPointLight(to_screen_space(position.x), to_screen_space(position.y), new Color(.45f, .45f, .45f, .95f), 300);
         muzzle_elumination = PhysicsHandler.createPointLight(to_screen_space(position.x), to_screen_space(position.y), new Color(1,1,0,1f), 400);
         health = MAX_HEALTH;
@@ -132,7 +163,10 @@ public abstract class Player {
         //do something? method inherited by sub classes
     }
 
-    public void setWeapon(WeaponData wd){
+    public boolean setWeapon(WeaponData wd){
+        if (wd.toString().equals(weapon.getWeaponData().toString()))
+            return false;
+
         weapon = new Weapon(wd);
         switch (wd.held_type){
             case ONE_HANDED:
@@ -145,6 +179,7 @@ public abstract class Player {
                 torso = new Sprite(character.torso_dw);
                 break;
         }
+        return true;
     }
 
     public void run(boolean run){
@@ -161,6 +196,7 @@ public abstract class Player {
     }
 
     PointLight muzzle_elumination;
+    PointLight halo;
     ConeLight flash_light;
    // PointLight flash_focus;
 
@@ -170,6 +206,7 @@ public abstract class Player {
             init_done = true;
         }
         body.setTransform(to_screen_space(position), MathUtils.degreesToRadians * rotation);
+        halo.setPosition(to_screen_space(position.x), to_screen_space(position.y));
         flash_light.setPosition(to_screen_space(position.x), to_screen_space(position.y));
         flash_light.setDirection(rotation);
         //flash_focus.setPosition(to_screen_space(position.x) + distance_to_focus * MathUtils.cos(MathUtils.degreesToRadians * rotation), to_screen_space(position.y) +  distance_to_focus  * MathUtils.sin(MathUtils.degreesToRadians * rotation));

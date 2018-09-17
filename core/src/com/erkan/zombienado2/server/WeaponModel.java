@@ -1,12 +1,15 @@
 package com.erkan.zombienado2.server;
 
 import com.badlogic.gdx.Gdx;
+import com.badlogic.gdx.math.MathUtils;
 import com.erkan.zombienado2.data.weapons.WeaponData;
 
 /**
  * Created by Erik on 2018-07-30.
  */
 public class WeaponModel {
+    static float MOVEMENT_MULTIPLIER = 2.3f;
+
     private WeaponData weaponData;
     private float elapsedtime = 0;
     private float elapsed_time_spread = 0;
@@ -18,13 +21,22 @@ public class WeaponModel {
     private int clip;
     private float current_spread;
 
+    private int excess_ammo = 0;
+
     public WeaponModel(WeaponData weapon){
         weaponData = weapon;
         clip = weapon.mag_size;
+        excess_ammo = weapon.mag_size * 3;
+        if (weaponData.equals(WeaponData.PISTOL))
+            excess_ammo = -1;
     }
 
     public WeaponData getWeaponData(){
         return weaponData;
+    }
+
+    public void addAmmo(int ammo){
+        excess_ammo += ammo;
     }
 
     public float getCurrent_spread(){
@@ -54,7 +66,14 @@ public class WeaponModel {
         if (reloading){
             elapsed_time_reload += dt;
             if (elapsed_time_reload > weaponData.reload_time){
-                clip = weaponData.mag_size;
+                int before_reload = clip;
+                if (excess_ammo == -1){
+                    clip = weaponData.mag_size;
+                } else {
+                    clip = Math.min(weaponData.mag_size, excess_ammo);
+                    excess_ammo -= (clip - before_reload);
+                }
+
                 elapsed_time_reload = 0;
                 reloading = false;
             }
@@ -65,8 +84,12 @@ public class WeaponModel {
         return clip;
     }
 
+    public int getExcessAmmo(){
+        return excess_ammo;
+    }
+
     public boolean reload(){
-        if (!reloading && clip < weaponData.mag_size){
+        if (!reloading && clip < weaponData.mag_size && (excess_ammo > 0 || excess_ammo == -1)){
             reloading = true;
             elapsed_time_reload = 0;
             return true;

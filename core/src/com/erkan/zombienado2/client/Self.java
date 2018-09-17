@@ -3,6 +3,7 @@ package com.erkan.zombienado2.client;
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.math.MathUtils;
 import com.badlogic.gdx.math.Vector2;
+import com.erkan.zombienado2.data.weapons.WeaponData;
 
 /**
  * Created by Erik on 2018-07-30.
@@ -37,5 +38,12 @@ public class Self extends Player {
         super.reload();
         SoundManager.addSound(getWeapon().getReloadSound(), getWeapon().getReloadSound().play());
 
+    }
+
+    @Override
+    public boolean setWeapon(WeaponData wd){
+        if (!super.setWeapon(wd)) return false;
+        SoundManager.addSound(change_weapon, change_weapon.play());
+        return true;
     }
 }

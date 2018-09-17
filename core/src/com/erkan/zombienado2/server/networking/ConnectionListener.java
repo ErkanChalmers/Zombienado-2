@@ -7,5 +7,6 @@ import java.net.Socket;
  */
 public interface ConnectionListener {
     void onMsgReceive(int identifier, String msg);
+    void connect(int identifier, Socket socket);
     void reconnect(int identifier, Socket socket);
 }

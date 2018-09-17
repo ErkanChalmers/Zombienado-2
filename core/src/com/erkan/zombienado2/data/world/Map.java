@@ -15,6 +15,7 @@ public class Map {
     List<Tuple<BoxData, Structure.BuildType>> structures = new ArrayList<>();
     List<Tuple<Boundary, com.erkan.zombienado2.client.world.Wall.Type>> walls = new ArrayList<>();
     List<Vector2> spawns = new ArrayList<>();
+    List<Vector2> loot_spawns = new ArrayList<>();
     List<DynamicObject> objs_back;
     List<DynamicObject> objs_front;
     List<DynamicObject> objs_top;
@@ -52,6 +53,10 @@ public class Map {
     public Vector2 getRandomSpawnpoint(){
         int index = MathUtils.random(0, spawns.size()-1);
         return spawns.get(index);
+    }
+
+    public List<Vector2> getLootPoints(){
+        return loot_spawns;
     }
 
 
@@ -116,5 +121,16 @@ public class Map {
         TEST_MAP.spawns.add(new Vector2(22, -6));
         TEST_MAP.spawns.add(new Vector2(8, -22));
         TEST_MAP.spawns.add(new Vector2(-1, -13));
+
+        TEST_MAP.loot_spawns.add(new Vector2(-15, -9));
+        TEST_MAP.loot_spawns.add(new Vector2(-27, -3));
+        TEST_MAP.loot_spawns.add(new Vector2(-13, 10));
+        TEST_MAP.loot_spawns.add(new Vector2(-2, -10));
+        TEST_MAP.loot_spawns.add(new Vector2(2, -24));
+        TEST_MAP.loot_spawns.add(new Vector2(21, 21));
+        TEST_MAP.loot_spawns.add(new Vector2(23, 5));
+        TEST_MAP.loot_spawns.add(new Vector2(22, -6));
+        TEST_MAP.loot_spawns.add(new Vector2(8, -22));
+        TEST_MAP.loot_spawns.add(new Vector2(-1, -13));
     }
 }

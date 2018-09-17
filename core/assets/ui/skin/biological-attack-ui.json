@@ -9,17 +9,26 @@ com.badlogic.gdx.graphics.g2d.BitmapFont: {
 }
 com.badlogic.gdx.graphics.Color: {
 	background: {
-		r: 1
-		g: 1
+		r: 0
+		g: 0
 		b: 0
+		a: 0.9
+	}
+
+	backgrounddrop: {
+		r: 0.1
+		g: 0.1
+		b: 0.1
 		a: 1
 	}
+
 	clear: {
 		r: 1
 		g: 1
 		b: 1
 		a: 0.9
 	}
+
 	color: {
 		r: 1
 		g: 1
@@ -94,11 +103,11 @@ com.badlogic.gdx.scenes.scene2d.ui.Skin$TintedDrawable: {
 	}
 	select-box-b: {
 		name: select-box
-		color: background
+		color: backgrounddrop
 	}
 	select-box-pressed-b: {
 		name: select-box-pressed
-		color: background
+		color: backgrounddrop
 	}
 	slider-c: {
 		name: slider

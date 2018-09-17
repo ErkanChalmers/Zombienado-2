@@ -4,9 +4,7 @@ package com.erkan.zombienado2.client;
 import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.g2d.Animation;
 
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Objects;
+import java.util.*;
 
 /**
  * Created by Erik on 2018-08-04.
@@ -29,7 +27,7 @@ public class Character {
 
         torso_1h = new Texture(path+"torso_1h.png");
         torso_2h = new Texture(path+"torso_2h.png");
-        torso_dw = new Texture(path+"torso_dw.png");
+        torso_dw = new Texture(path+"torso_DW.png");
 
         torso_1h.setFilter(Texture.TextureFilter.Linear, Texture.TextureFilter.Linear);
         torso_2h.setFilter(Texture.TextureFilter.Linear, Texture.TextureFilter.Linear);
@@ -55,6 +53,14 @@ public class Character {
 
     public static Character getCharacter(String name){
         return characters.get(name);
+    }
+
+    public static Set<String> getCharactes(){
+        Set<String> names = new HashSet<>();
+        characters.entrySet().stream().forEach(c -> {
+            names.add(c.getKey());
+        });
+        return names;
     }
 
     public String toString(){

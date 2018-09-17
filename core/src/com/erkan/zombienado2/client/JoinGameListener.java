@@ -5,4 +5,5 @@ package com.erkan.zombienado2.client;
  */
 public interface JoinGameListener {
     void join(final String IP,final int PORT);
+    void ready(final String name, final String character);
 }

@@ -16,8 +16,8 @@ public class DesktopLauncher {
 		LwjglApplicationConfiguration client_configuration = new LwjglApplicationConfiguration();
 		client_configuration.title = "Zombienado 2";
 		client_configuration.addIcon("ui/icon.png", Files.FileType.Internal);
-		client_configuration.width = 1920;
-		client_configuration.height = 1080;
+		client_configuration.width = 1250;
+		client_configuration.height = 720;
 		//client_configuration.fullscreen = true;
 		//client_configuration.width = 2560;
 		//client_configuration.height = 1440;
