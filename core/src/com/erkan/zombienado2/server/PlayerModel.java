@@ -44,6 +44,21 @@ public class PlayerModel {
         this.health = MAX_HEALT;
     }
 
+
+    Action action = null;
+    public void setAction(Action action){
+        this.action = action;
+    }
+
+    public Action getAction(){ //:S
+        return action;
+    }
+
+    public void performAction(){
+        if (action != null)
+            action.performAction(this);
+    }
+
     public void switchWeapon(){
         if (primary == null)
             return;
@@ -58,7 +73,7 @@ public class PlayerModel {
         return weapon;
     }
     public WeaponModel getPrimary(){
-        return weapon;
+        return primary;
     }
 
     public void setPrimaryWeapon(WeaponData weapon){

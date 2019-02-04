@@ -1,9 +1,6 @@
 package com.erkan.zombienado2.client;
 
-import com.badlogic.gdx.ApplicationAdapter;
-import com.badlogic.gdx.Gdx;
-import com.badlogic.gdx.Input;
-import com.badlogic.gdx.InputProcessor;
+import com.badlogic.gdx.*;
 import com.badlogic.gdx.audio.Sound;
 import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.GL20;
@@ -12,17 +9,19 @@ import com.badlogic.gdx.graphics.g2d.BitmapFont;
 import com.badlogic.gdx.graphics.g2d.GlyphLayout;
 import com.badlogic.gdx.graphics.g2d.Sprite;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
+import com.badlogic.gdx.graphics.g2d.freetype.FreeTypeFontGenerator;
 import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
 import com.badlogic.gdx.math.MathUtils;
 import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.math.Vector3;
 import com.badlogic.gdx.physics.box2d.*;
-import com.erkan.zombienado2.client.menus.GameLobby;
-import com.erkan.zombienado2.client.menus.MainMenu;
+import com.erkan.zombienado2.MetaData;
+import com.erkan.zombienado2.client.menus.*;
 import com.erkan.zombienado2.client.menus.Menu;
 import com.erkan.zombienado2.client.world.*;
 import com.erkan.zombienado2.client.world.World;
 import com.erkan.zombienado2.data.world.Map;
+import com.erkan.zombienado2.data.world.Tuple;
 import com.erkan.zombienado2.graphics.Transform;
 import com.erkan.zombienado2.client.networking.ConnectionListener;
 import com.erkan.zombienado2.client.networking.ServerProxy;
@@ -31,30 +30,37 @@ import com.erkan.zombienado2.networking.ServerHeaders;
 import com.badlogic.gdx.graphics.Texture;
 import com.erkan.zombienado2.server.misc.FilterConstants;
 
-import java.awt.*;
-import java.lang.reflect.Array;
 import java.util.*;
 import java.util.ArrayList;
 import java.util.List;
 
 import static com.erkan.zombienado2.graphics.Transform.*;
 
-public class Client extends ApplicationAdapter implements ConnectionListener, JoinGameListener, ContactListener, InputProcessor {
+public class Client extends ApplicationAdapter implements ConnectionListener, JoinGameListener, ContactListener, InputProcessor, PopupListener {
+	private long ping = -1;
+	private long ping_sent;
+	private long server_tickrate = 0;
+
 	private Sound sound_amb;
+	Texture vignette;
 	Texture ground;
+	Texture txt_health;
 	World world;
 
 	Sound music;
 
 	Menu mainMenu;
 	Menu charSelect;
+	ExitGamePopup exitPop;
 
 	List<Zombie> zombies = new ArrayList<>();
 	int current_wave = 0;
 
 	GameState state = GameState.InMenu;
+	GameState previous_state = GameState.InMenu;
 
 	BitmapFont font;
+	BitmapFont debugFont;
 	SpriteBatch batch;
 	SpriteBatch batch_hud;
 	ShapeRenderer debugRenderer;
@@ -79,10 +85,13 @@ public class Client extends ApplicationAdapter implements ConnectionListener, Jo
 	Loot loot[] = new Loot[0];
 
 	@Override
-	public synchronized void join(String IP, int PORT) {
+	public synchronized Tuple<Boolean, String> join(String IP, int PORT) {
 		ServerProxy.addListener(this);
-		ServerProxy.connect(IP, PORT);
-		charSelect.create();
+		Tuple<Boolean, String> res = ServerProxy.connect(IP, PORT);
+		if (res.getFirst()) {
+			charSelect.create();
+		}
+		return res;
 	}
 
 	@Override
@@ -98,6 +107,8 @@ public class Client extends ApplicationAdapter implements ConnectionListener, Jo
 		world = new World();
 		Weapon.init();
 		Loot.loadTextures();
+		vignette = new Texture("misc/vignette.png");
+		txt_health = new Texture("misc/heart.png");
  		ground = new Texture("misc/test_ground.png");
  		ground.setFilter(Texture.TextureFilter.Linear, Texture.TextureFilter.Linear);
 		sound_amb = Gdx.audio.newSound(Gdx.files.internal("audio/misc/notification_amb.mp3"));
@@ -108,6 +119,11 @@ public class Client extends ApplicationAdapter implements ConnectionListener, Jo
 		dDebugRenderer = new Box2DDebugRenderer();
 		debugRenderer = new ShapeRenderer();
 		font = new BitmapFont();
+		FreeTypeFontGenerator generator = new FreeTypeFontGenerator(Gdx.files.internal("fonts/debugfont.ttf"));
+		FreeTypeFontGenerator.FreeTypeFontParameter parameter = new FreeTypeFontGenerator.FreeTypeFontParameter();
+		parameter.size = 8;
+		debugFont = generator.generateFont(parameter); // font size 12 pixels
+		generator.dispose();
 		//self = new Self("n00b", Character.OFFICER); //PLACEHOLDER
 		//zoom_to = self.getWeapon().getWeaponData().scope; //PLACEHOLDER
 		camera = new OrthographicCamera(Gdx.graphics.getWidth(), Gdx.graphics.getHeight());
@@ -142,25 +158,23 @@ public class Client extends ApplicationAdapter implements ConnectionListener, Jo
 			world.add_top(obj);
 		});
 
-
+		exitPop = new ExitGamePopup(this);
 		mainMenu.create();
 
 	}
 
 	float testAngle = 0;
-
-
 	@Override
 	public synchronized void render () {
-		switch (state){
-			case InMenu:
-				mainMenu.render();
-				return;
-			case InCharacterSelect:
-				//charSelect.render();
-				//return;
-			default:
-				break;
+		if (state.equals(GameState.InMenu)) {
+			mainMenu.render();
+			return;
+		} else {
+			if (Gdx.input.isKeyPressed(Input.Keys.ESCAPE)) {
+				if (!state.equals(GameState.InExitGame))
+					previous_state = state;
+					state = GameState.InExitGame;
+			}
 		}
 
 		if (state.equals(GameState.InGame)) {
@@ -202,6 +216,10 @@ public class Client extends ApplicationAdapter implements ConnectionListener, Jo
 				ServerProxy.reload();
 			}
 
+			if (Gdx.input.isKeyPressed(Input.Keys.E)) {
+				ServerProxy.performAction();
+			}
+
 
 			float mouse_dx = Gdx.input.getX() - Gdx.graphics.getWidth() / 2;
 			float mouse_dy = -Gdx.input.getY() + Gdx.graphics.getHeight() / 2;
@@ -227,13 +245,21 @@ public class Client extends ApplicationAdapter implements ConnectionListener, Jo
 				camera.position.x = to_screen_space(self.position.x) + mouse_dx / 2;
 				camera.position.y = to_screen_space(self.position.y) + mouse_dy / 2;
 			} else {
-				camera.position.x += movementvector.x * 3;
-				camera.position.y += movementvector.y * 3;
+				for (TeamMate tm: teamMates) {
+					if (tm != null && tm.isAlive()){
+						camera.position.x = to_screen_space(tm.position.x);
+						camera.position.y = to_screen_space(tm.position.y);
+						break;
+					}
+				}
+				//camera.position.x += movementvector.x * 3;
+				//camera.position.y += movementvector.y * 3;
 				camera.zoom = 1f;
 			}
-
-
 		}
+
+		SoundManager.playQueued();
+
 		camera.update();
 		camera_world_coordinates.x = Transform.scale_to_world(camera.position.x);
 		camera_world_coordinates.y = Transform.scale_to_world(camera.position.y);
@@ -253,6 +279,7 @@ public class Client extends ApplicationAdapter implements ConnectionListener, Jo
 
 		zombies.stream().forEach(zombie -> zombie.render_gore(batch));
 		Arrays.stream(loot).forEach(l -> l.draw(batch));
+		Loot.elapsed+=Gdx.graphics.getDeltaTime()*2;
 		zombies.stream().forEach(zombie -> zombie.render(batch));
 
 		if (teamMates != null) {
@@ -268,7 +295,6 @@ public class Client extends ApplicationAdapter implements ConnectionListener, Jo
 
 
 		world.render_front(batch);
-
 
 		for (Vector2[] bullets:
 				bullets) {
@@ -314,9 +340,9 @@ public class Client extends ApplicationAdapter implements ConnectionListener, Jo
 		});
 		debugRenderer.end();*/
 		//dDebugRenderer.render(PhysicsHandler.getWorld(), camera.combined);
+		batch_hud.begin();
 		if (state.equals(GameState.InGame)) {
-
-			batch_hud.begin();
+			batch_hud.draw(vignette, 0, 0, camera.viewportWidth, camera.viewportHeight);
 			font.setColor(Color.WHITE);
 /*
 		font.draw(batch_hud, "Position: " + (int)(self.position.x * 10) / 10f + ", " + (int)(self.position.y * 10) / 10f, 5, Gdx.graphics.getHeight() - 5);
@@ -330,8 +356,8 @@ public class Client extends ApplicationAdapter implements ConnectionListener, Jo
 					if (teamMate != null) teamMate.hud_draw(batch_hud, font);
 				});
 
-			Texture w_tex = new Texture(self.getWeapon().getWeaponData().texture_path);
 
+			Texture w_tex = new Texture(self.getWeapon().getWeaponData().texture_path);
 			batch_hud.draw(w_tex, camera.viewportWidth - 70 - 15, 40);
 			GlyphLayout glyphLayout = new GlyphLayout();
 			glyphLayout.setText(font, self.getWeapon().getWeaponData().name);
@@ -339,22 +365,53 @@ public class Client extends ApplicationAdapter implements ConnectionListener, Jo
 			glyphLayout.setText(font, self.getAmmo() + "/" + self.getWeapon().getWeaponData().mag_size);
 			font.draw(batch_hud, self.getAmmo() + "/" + (self.getExcessAmmo() == -1 ? "INF" : self.getExcessAmmo()), camera.viewportWidth - 70 - glyphLayout.width, 70);
 
-			font.draw(batch_hud, "Health:", 50, 90);
+
+			batch_hud.draw(txt_health, 50,55);
 			int hp_prec = (int) ((self.getHealth() / self.MAX_HEALTH) * 100);
 			if (hp_prec < 30)
 				font.setColor(Color.RED);
 			else if (hp_prec < 65)
 				font.setColor(Color.ORANGE);
-			font.draw(batch_hud, hp_prec + "%", 50, 70);
+			font.draw(batch_hud, hp_prec + "%", 85, 75);
 			w_tex.dispose();
-		} else {
+		} else if (state.equals(GameState.InCharacterSelect)) {
+			batch_hud.end();
 			charSelect.render();
 			batch_hud.begin();
 		}
 		float w = camera.viewportWidth / 2;
 		float h = camera.viewportHeight - 100;
 		NotificationManager.draw(batch_hud, w, h);
+
+		//DEBUG INFORMATION
+		GlyphLayout gl;
+		debugFont.setColor(Color.WHITE);
+		gl = new GlyphLayout(debugFont, MetaData.version_name);
+		debugFont.draw(batch_hud, MetaData.version_name, camera.viewportWidth - gl.width, 8);
+		String fps = "FPS: " + Gdx.graphics.getFramesPerSecond();
+
+		gl = new GlyphLayout(debugFont, fps);
+		debugFont.draw(batch_hud, fps, camera.viewportWidth - gl.width, camera.viewportHeight - 8);
+		gl = new GlyphLayout(debugFont, "Ping: "+ping);
+		debugFont.draw(batch_hud, "Ping: "+ping, camera.viewportWidth - gl.width, camera.viewportHeight - 18);
+
+		gl = new GlyphLayout(debugFont, "host tr: "+server_tickrate);
+		debugFont.draw(batch_hud, "host tr: ", camera.viewportWidth - gl.width, camera.viewportHeight - 32);
+		if (server_tickrate < 55)
+			debugFont.setColor(Color.ORANGE);
+		else if (server_tickrate < 45)
+			debugFont.setColor(Color.ORANGE);
+		gl = new GlyphLayout(debugFont, ""+server_tickrate);
+		debugFont.draw(batch_hud, ""+server_tickrate, camera.viewportWidth - gl.width, camera.viewportHeight - 32);
 		batch_hud.end();
+
+		if (state.equals(GameState.InExitGame)) {
+			exitPop.show();
+			exitPop.render(batch_hud);
+		} else {
+			exitPop.hide();
+		}
+
 	}
 	
 	@Override
@@ -381,6 +438,8 @@ public class Client extends ApplicationAdapter implements ConnectionListener, Jo
 				my_id = Integer.parseInt(args[1]);
 				System.out.println("My id is: "+my_id);
 				teamMates = new TeamMate[Integer.parseInt(args[2])];
+				ping_sent = System.currentTimeMillis();
+				ServerProxy.send("ping");
 				break;
 			case ServerHeaders.JOIN_PLAYER:
 			{
@@ -489,7 +548,7 @@ public class Client extends ApplicationAdapter implements ConnectionListener, Jo
 				Zombie.fade();
 				break;
 			case ServerHeaders.WAVE_START:
-				SoundManager.addPrioSound(sound_amb, sound_amb.play());
+				SoundManager.playNonInterrupt(sound_amb);
 				NotificationManager.post("Wave  "+args[1]+"  started");
 				zombies.stream().forEach(zombie -> zombie.destroy()); //Potential problem
 				zombies = new ArrayList<>();
@@ -500,6 +559,18 @@ public class Client extends ApplicationAdapter implements ConnectionListener, Jo
 			case ServerHeaders.GAME_OVER:
 				NotificationManager.post("Game over. Final score:   "+Integer.parseInt(args[1]));
 				break;
+			case ServerHeaders.PING_RESPONSE:
+				long now = System.currentTimeMillis();
+				ping = now - ping_sent;
+				server_tickrate = Integer.parseInt(args[1]);
+				new Timer().schedule(new TimerTask() {
+					@Override
+					public void run() {
+						ping_sent = System.currentTimeMillis();
+						ServerProxy.send("ping");
+					}
+				}, 1000L);
+			break;
 		}
 	}
 
@@ -508,16 +579,27 @@ public class Client extends ApplicationAdapter implements ConnectionListener, Jo
 		if (contact.getFixtureA().getFilterData().categoryBits == FilterConstants.ROOF_SENSOR){
 			Player p = (Player)contact.getFixtureB().getUserData();
 			p.setIndoor(true);
-			if (p.equals(self))
-				((Structure)contact.getFixtureA().getUserData()).hide_roof();
+			((Structure) contact.getFixtureA().getUserData()).hide_roof();
+			if (p.equals(self)) {
 				effect_magnification = 0.65f;
+			}
 		}
 		if (contact.getFixtureB().getFilterData().categoryBits == FilterConstants.ROOF_SENSOR){
 			Player p = (Player)contact.getFixtureA().getUserData();
 			p.setIndoor(true);
-			if (p.equals(self))
-				((Structure)contact.getFixtureB().getUserData()).hide_roof();
+			((Structure) contact.getFixtureB().getUserData()).hide_roof();
+			if (p.equals(self)) {
 				effect_magnification = 0.65f;
+			}
+		}
+
+		if (contact.getFixtureA().getFilterData().categoryBits == FilterConstants.SOUND_FIXTURE){
+			SoundSource sound = (SoundSource) contact.getFixtureA().getUserData();
+			SoundManager.queueSound(sound);
+		}
+		if (contact.getFixtureB().getFilterData().categoryBits == FilterConstants.SOUND_FIXTURE){
+			SoundSource sound = (SoundSource) contact.getFixtureB().getUserData();
+			SoundManager.queueSound(sound);
 		}
 	}
 
@@ -527,16 +609,44 @@ public class Client extends ApplicationAdapter implements ConnectionListener, Jo
 			Player p = (Player)contact.getFixtureB().getUserData();
 			p.setIndoor(false);
 			if (p.equals(self)) {
-				((Structure)contact.getFixtureA().getUserData()).show_roof();
 				effect_magnification = 1f;
 			}
+
+			List<Player> players = new ArrayList<>();
+			players.add(self);
+			players.addAll(Arrays.asList(teamMates));
+
+			boolean empty = true;
+			for (Player player : players) {
+				if (player != null && contact.getFixtureA().testPoint(to_screen_space(player.position.x), to_screen_space(player.position.y))){
+					empty = false;
+					break;
+				}
+			}
+
+			if (empty)
+				((Structure) contact.getFixtureA().getUserData()).show_roof();
 		}
 		if (contact.getFixtureB().getFilterData().categoryBits == FilterConstants.ROOF_SENSOR){
 			Player p = (Player)contact.getFixtureA().getUserData();
 			p.setIndoor(false);
-			if (p.equals(self))
-				((Structure)contact.getFixtureB().getUserData()).show_roof();
+			if (p.equals(self)) {
 				effect_magnification = 1f;
+			}
+			List<Player> players = new ArrayList<>();
+			players.add(self);
+			players.addAll(Arrays.asList(teamMates));
+
+			boolean empty = true;
+			for (Player player : players) {
+				if (player != null && contact.getFixtureB().testPoint(to_screen_space(player.position.x), to_screen_space(player.position.y))){
+					empty = false;
+					break;
+				}
+			}
+
+			if (empty)
+				((Structure) contact.getFixtureB().getUserData()).show_roof();
 		}
 	}
 
@@ -569,6 +679,7 @@ public class Client extends ApplicationAdapter implements ConnectionListener, Jo
 		if (character == '2') {
 			ServerProxy.switch_weapon();
 		}
+
 		return false;
 	}
 
@@ -598,7 +709,22 @@ public class Client extends ApplicationAdapter implements ConnectionListener, Jo
 		return false;
 	}
 
+	@Override
+	public void exit() {
+		Gdx.app.exit();
+		System.exit(0);
+	}
+
+	@Override
+	public void keepPlaying() {
+		state = previous_state;
+		if (state.equals(GameState.InCharacterSelect))
+			Gdx.input.setInputProcessor(charSelect.getStage());
+		else
+			Gdx.input.setInputProcessor(this);
+	}
+
 	private enum GameState {
-		InMenu, InCharacterSelect, InGame
+		InMenu, InCharacterSelect, InGame, InExitGame
 	}
 }

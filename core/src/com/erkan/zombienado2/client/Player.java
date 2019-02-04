@@ -62,14 +62,13 @@ public abstract class Player {
     private boolean isshooting = false;
     public float distance_to_focus = to_screen_space(10);
     private float health;
-    private boolean alive = true;
+    protected boolean alive = true;
     private int current_ammo = 0;
     private int excess_ammo = 0;
 
     public void setAlive(boolean alive){
         if (this.alive && !alive){
             //TODO: die
-            NotificationManager.post("You are dead");
             flash_light.setColor(new Color(1f,1f,1f,0f));
         }
 
@@ -121,7 +120,7 @@ public abstract class Player {
         this.body = PhysicsHandler.createCircle(to_screen_space(PlayerModel.RADIUS), FilterConstants.PLAYER_FIXTURE, (short)(FilterConstants.LIGHT | FilterConstants.PHYSICS_FIXTURE));
         body.getFixtureList().get(0).setUserData(this);
         flash_light = PhysicsHandler.createConeLight(to_screen_space(position.x), to_screen_space(position.y), new Color(1f,1f,1f,1f), to_screen_space(8), rotation, 25);
-        halo = PhysicsHandler.createPointLight(0, 0, new Color(.55f,.55f,.45f,.35f), to_screen_space(1.5f));
+        halo = PhysicsHandler.createPointLight(0, 0, new Color(.55f,.55f,.45f,.45f), to_screen_space(1.5f));
         halo.setContactFilter(FilterConstants.TOP_LIGHT, FilterConstants.TOP_LIGHT, FilterConstants.OBSTACLE_FIXTURE);
         //flash_focus = PhysicsHandler.createPointLight(to_screen_space(position.x), to_screen_space(position.y), new Color(.45f, .45f, .45f, .95f), 300);
         muzzle_elumination = PhysicsHandler.createPointLight(to_screen_space(position.x), to_screen_space(position.y), new Color(1,1,0,1f), 400);

@@ -30,6 +30,9 @@ public class Server implements ConnectionListener, ContactListener {
 
     private static boolean isAwaitingConnection = true;
 
+    private long last_tick;
+    private int maintained_tickrate;
+
     PlayerModel[] players;
     List<Body> alive_bullets = new LinkedList<>();
     List<Zombie> zombies = new LinkedList<>();
@@ -124,13 +127,18 @@ public class Server implements ConnectionListener, ContactListener {
                     ConnectionManager.broadcast(ServerHeaders.PLAYER_RELOAD, identifier);
                 }
                 break;
+            case "action":
+                if (!players[identifier].is_alive())
+                    break;
+                players[identifier].performAction();
+                break;
             case "switch_weapon":
                 if (!players[identifier].is_alive())
                     break;
                 players[identifier].switchWeapon();
                 break;
             case "ping":
-                ConnectionManager.send(identifier, "ok");
+                ConnectionManager.send(identifier, ServerHeaders.PING_RESPONSE + " " + maintained_tickrate);
                 break;
         }
     }
@@ -296,9 +304,9 @@ public class Server implements ConnectionListener, ContactListener {
 
         if (wave_ongoing) {
             zombie_spawn_accumulator += delta;
-            float wave_size = Zombie.DEF_WAVE_SIZE + (float)wave;
-            float spawn_rate = Zombie.DEF_SPAWN_RATE + Zombie.DEF_SPAWN_RATE/(float)wave;
-            float max_health = Zombie.DEF_MAX_HEALTH + wave;
+            float wave_size = (Zombie.DEF_WAVE_SIZE + (float)wave * 2) * players.length;
+            float spawn_rate = Zombie.DEF_SPAWN_RATE; //TODO:change this
+            float max_health = Zombie.DEF_MAX_HEALTH + wave * 2;
 
             if (zombies.size() < wave_size && zombie_spawn_accumulator > spawn_rate) {
                 zombie_spawn_accumulator -= spawn_rate;
@@ -333,7 +341,8 @@ public class Server implements ConnectionListener, ContactListener {
                     zombie.setTarget(target_position);
                 } else if (zombie.position_reached()){
                     zombie.setBehavior(Zombie.Behavior.Roaming);
-                    zombie.setTarget(new Vector2().setToRandomDirection().scl(MathUtils.random(5f)));
+                    Vector2 zombPos = zombie.getPosition().cpy();
+                    zombie.setTarget(zombPos.add(new Vector2().setToRandomDirection().scl(MathUtils.random(5f))));
                 }
 
                 zombie.update(STEP_TIME);
@@ -352,6 +361,11 @@ public class Server implements ConnectionListener, ContactListener {
                 startWave();
             }
         }
+
+        long timestamp = System.currentTimeMillis();
+        float dt = (timestamp - last_tick)/1000f;
+        maintained_tickrate = (int)(1f/dt);
+        last_tick = timestamp;
     }
 
     private void gameOver(){
@@ -416,7 +430,17 @@ public class Server implements ConnectionListener, ContactListener {
 
     @Override
     public void endContact(Contact contact) {
+        if (contact.getFixtureA().getFilterData().categoryBits == FilterConstants.LOOT_FIXTURE){
+            if (contact.getFixtureB().getFilterData().categoryBits == FilterConstants.PLAYER_FIXTURE){
+                ((Loot)contact.getFixtureA().getBody().getUserData()).leave(((PlayerModel)contact.getFixtureB().getBody().getUserData()));
+            }
+        }
 
+        if (contact.getFixtureB().getFilterData().categoryBits == FilterConstants.LOOT_FIXTURE){
+            if (contact.getFixtureA().getFilterData().categoryBits == FilterConstants.PLAYER_FIXTURE){
+                ((Loot)contact.getFixtureB().getBody().getUserData()).leave(((PlayerModel)contact.getFixtureA().getBody().getUserData()));
+            }
+        }
     }
 
     @Override

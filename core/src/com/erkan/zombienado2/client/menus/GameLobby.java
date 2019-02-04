@@ -2,7 +2,6 @@ package com.erkan.zombienado2.client.menus;
 
 
 import com.badlogic.gdx.Gdx;
-import com.badlogic.gdx.graphics.GL20;
 import com.badlogic.gdx.scenes.scene2d.InputEvent;
 import com.badlogic.gdx.scenes.scene2d.Stage;
 import com.badlogic.gdx.scenes.scene2d.ui.*;
@@ -10,9 +9,6 @@ import com.badlogic.gdx.scenes.scene2d.utils.ClickListener;
 import com.badlogic.gdx.utils.Align;
 import com.badlogic.gdx.utils.Array;
 import com.erkan.zombienado2.client.Character;
-import com.erkan.zombienado2.client.JoinGameListener;
-
-import java.util.Iterator;
 
 /**
  * Created by Erik on 2018-09-16.
@@ -29,8 +25,13 @@ public class GameLobby extends Menu{
     }
 
     @Override
+    public Stage getStage() {
+        return stage;
+    }
+
+    @Override
     public void create() {
-        skin = new Skin(Gdx.files.internal("ui/skin/biological-attack-ui.json"));
+        skin = new Skin(Gdx.files.internal("ui/skin/neon-ui.json"));
 
         stage = new Stage();
         Table table = new Table(skin);
@@ -39,7 +40,8 @@ public class GameLobby extends Menu{
         table.add(new Label("Ready players", skin)).colspan(2);
         table.row();
         player_list = new List<>(skin);
-        table.add(player_list).colspan(2).height(300).width(300);
+
+        table.add(player_list).colspan(2).height(300).width(300).padTop(2);
 
         table.row();
 

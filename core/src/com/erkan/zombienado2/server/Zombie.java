@@ -13,7 +13,7 @@ import com.erkan.zombienado2.server.misc.FilterConstants;
  */
 public class Zombie {
     public static final float DEF_SPAWN_RATE = .1f;
-    public static final float DEF_WAVE_SIZE = 40;
+    public static final float DEF_WAVE_SIZE = 1;
     public static final float DEF_MAX_HEALTH = 20;
     private static final float ATTACK_TIME = .5f;
 
@@ -39,7 +39,6 @@ public class Zombie {
 
 
     public Zombie(float x, float y, float health){
-        //TODO: timer for moving
         body = WorldManager.createCircle(RADIUS, FilterConstants.ENEMY_FIXTURE, (short)(FilterConstants.ENEMY_FIXTURE | FilterConstants.PLAYER_FIXTURE | FilterConstants.OBSTACLE_FIXTURE | FilterConstants.PROJECTILE_FIXTURE));
         body.setTransform(x, y, 0);
         body.setUserData(this);
@@ -152,15 +151,12 @@ public class Zombie {
 
         if (!behavior.equals(Behavior.Standing) && move_target != null && body != null){
             freePath = true;
-            WorldManager.getWorld().rayCast(new RayCastCallback() {
-                @Override
-                public float reportRayFixture(Fixture fixture, Vector2 point, Vector2 normal, float fraction) {
-                    if (fixture.getFilterData().categoryBits == FilterConstants.OBSTACLE_FIXTURE) {
-                        freePath = false;
-                        return 0;
-                    }
-                    return 1;
+            WorldManager.getWorld().rayCast((fixture, point, normal, fraction) -> {
+                if (fixture.getFilterData().categoryBits == FilterConstants.OBSTACLE_FIXTURE) {
+                    freePath = false;
+                    return 0;
                 }
+                return 1;
             }, body.getPosition().cpy(), move_target.cpy());
 
             if (freePath){
@@ -185,6 +181,7 @@ public class Zombie {
                     System.out.println("closest goal: "+goal);
                     System.out.println("path not found");
                     */
+                    move_target = null;
                     return;
                 }
 

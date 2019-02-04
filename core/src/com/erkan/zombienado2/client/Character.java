@@ -44,11 +44,11 @@ public class Character {
 
     static {
         characters = new HashMap<>();
-        characters.put("SOLDIER", SOLDIER);
-        characters.put("NURSE", NURSE);
-        characters.put("OFFICER", OFFICER);
-        characters.put("BUSINESS", BUSINESS);
-        characters.put("SCHOOLGIRL", SCHOOLGIRL);
+        characters.put("Soldier", SOLDIER);
+        characters.put("Nurse", NURSE);
+        characters.put("Officer", OFFICER);
+        characters.put("Businessman", BUSINESS);
+        characters.put("Schoolgirl", SCHOOLGIRL);
     }
 
     public static Character getCharacter(String name){

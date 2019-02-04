@@ -70,8 +70,12 @@ public class WeaponModel {
                 if (excess_ammo == -1){
                     clip = weaponData.mag_size;
                 } else {
-                    clip = Math.min(weaponData.mag_size, excess_ammo);
-                    excess_ammo -= (clip - before_reload);
+                    while (clip < weaponData.mag_size){
+                        if (excess_ammo == 0)
+                            break;
+                        clip++;
+                        excess_ammo--;
+                    }
                 }
 
                 elapsed_time_reload = 0;

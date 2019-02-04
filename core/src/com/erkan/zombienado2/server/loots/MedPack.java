@@ -1,5 +1,6 @@
 package com.erkan.zombienado2.server.loots;
 
+import com.erkan.zombienado2.client.Player;
 import com.erkan.zombienado2.server.PlayerModel;
 
 /**
@@ -12,13 +13,24 @@ public class MedPack extends Loot {
 
     @Override
     public void pickup(PlayerModel player) {
-        if (alive)
+        if (alive && player.getHealth() != Player.MAX_HEALTH) {
             player.addHealth(20f);
-        alive = false;
+            alive = false;
+        }
+    }
+
+    @Override
+    public void leave(PlayerModel player) {
+        //No need
     }
 
     @Override
     public String toString() {
         return "M";
+    }
+
+    @Override
+    public void performAction(PlayerModel player) {
+        //nothing needed here
     }
 }

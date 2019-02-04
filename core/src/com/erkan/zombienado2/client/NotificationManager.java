@@ -22,9 +22,9 @@ public class NotificationManager {
     private static BitmapFont font;
     private static BitmapFont notification_font;
     private static String text = "";
-    private static Color R = new Color(1f,.1f,0,.5f);
-    private static Color G = new Color(1,1f,1,1f);
-    private static Color B = new Color(0,.4f,1f,.5f);
+    private static Color R = new Color(1f,.1f, .5f,.5f);
+    private static Color G = new Color(1,1f,1,.8f);
+    private static Color B = new Color(0f,.7f,1f,.5f);
 
     private static float elapsed;
     private static float elapsed_queue;
@@ -50,7 +50,7 @@ public class NotificationManager {
         GlyphLayout glyphLayout = new GlyphLayout();
         glyphLayout.setText(font, text);
         offset_x = glyphLayout.width/2;
-        SoundManager.addPrioSound(sound_effect, sound_effect.play());
+        SoundManager.playNonInterrupt(sound_effect);
         closed = false;
         elapsed = 0;
     }
@@ -62,7 +62,7 @@ public class NotificationManager {
 
     static void draw(SpriteBatch batch, float w, float h){
         if (elapsed < 3f) {
-            distortion_offset += MathUtils.random(-1f, 1f);
+            distortion_offset += MathUtils.random(-.3f, .3f);
             distortion_offset = MathUtils.clamp(distortion_offset, 0, 6f);
             font.setColor(R);
             font.draw(batch, text, w - offset_x - distortion_offset, h + distortion_offset / 2);
@@ -72,7 +72,7 @@ public class NotificationManager {
             font.draw(batch, text, w - offset_x, h);
             elapsed += Gdx.graphics.getDeltaTime();
         } else if (!closed) {
-            SoundManager.addPrioSound(sound_close, sound_close.play());
+            SoundManager.playNonInterrupt(sound_close);
             closed = true;
         }
 

@@ -8,6 +8,7 @@ import com.erkan.zombienado2.server.PlayerModel;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.function.Function;
 
 /**
  * Created by Erik on 2018-09-13.
@@ -46,19 +47,34 @@ public class WeaponPack extends Loot {
     @Override
     public void pickup(PlayerModel player) {
         if (alive) {
-            if (player.getPrimary().getWeaponData().toString().equals(weapon)){
-                player.getPrimary().addAmmo(player.getWeapon().getWeaponData().mag_size * 3);
-            } else
+            if (player.getPrimary() == null){
                 player.setPrimaryWeapon(WeaponData.getWeapon(weapon));
-
-
+                alive = false;
+            } else if (player.getPrimary().getWeaponData().toString().equals(weapon)) {
+                player.getPrimary().addAmmo(player.getWeapon().getWeaponData().mag_size * 3);
+                alive = false;
+            } else {
+                player.setAction(this);
+            }
         }
+    }
 
-        alive = false;
+    @Override
+    public void leave(PlayerModel player) {
+        if (alive) {
+            if (player.getAction().equals(this))
+                player.setAction(null);
+        }
     }
 
     @Override
     public String toString() {
         return "W:"+weapon;
+    }
+
+    @Override
+    public void performAction(PlayerModel player) {
+        player.setPrimaryWeapon(WeaponData.getWeapon(weapon));
+        alive = false;
     }
 }

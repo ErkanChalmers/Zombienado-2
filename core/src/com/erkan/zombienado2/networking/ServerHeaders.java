@@ -19,4 +19,5 @@ public class ServerHeaders {
     public static final String WAVE_START = "WAVE_START";
     public static final String WAVE_END = "WAVE_END";
     public static final String GAME_OVER = "GAME_OVER";
+    public static final String PING_RESPONSE = "PING_RESPONSE";
 }

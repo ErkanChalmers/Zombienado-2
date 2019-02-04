@@ -2,10 +2,12 @@ package com.erkan.zombienado2.client.networking;
 
 import com.badlogic.gdx.math.Vector2;
 import com.erkan.zombienado2.data.weapons.WeaponData;
+import com.erkan.zombienado2.data.world.Tuple;
 
 import java.io.*;
 import java.net.InetAddress;
 import java.net.Socket;
+import java.net.UnknownHostException;
 
 /**
  * Created by Erik on 2018-07-29.
@@ -20,7 +22,9 @@ public class ServerProxy {
         ServerProxy.cl = cl;
     }
 
-    public static void connect(final String IP, final int PORT){
+    public static Tuple<Boolean, String> connect(final String IP, final int PORT){
+        boolean ok = false;
+        String error = "";
         try {
             Socket socket = new Socket(InetAddress.getByName(IP), PORT);
             reader = new BufferedReader(new InputStreamReader(socket.getInputStream()));
@@ -35,8 +39,16 @@ public class ServerProxy {
                     e.printStackTrace();
                 }
             }).start();
+            ok = true;
         } catch (IOException e) {
+            ok = false;
+            if (e instanceof UnknownHostException){
+                error = "Host unknown";
+            } else
+                error = e.getMessage();
             e.printStackTrace();
+        } finally {
+            return new Tuple<>(ok, error);
         }
     }
 
@@ -74,6 +86,9 @@ public class ServerProxy {
     }
     public static void reload(){
         send("reload");
+    }
+    public static void performAction(){
+        send("action");
     }
     public static void switch_weapon(){
         send("switch_weapon");

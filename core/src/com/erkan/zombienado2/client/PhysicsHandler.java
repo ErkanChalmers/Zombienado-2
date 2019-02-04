@@ -87,6 +87,7 @@ public class PhysicsHandler {
         FixtureDef fix = new FixtureDef();
         fix.shape = shape;
         fix.filter.categoryBits = categoryBits;
+        fix.filter.groupIndex = categoryBits;
         fix.filter.maskBits = maskBits;
 
 

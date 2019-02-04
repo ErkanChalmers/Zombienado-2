@@ -6,9 +6,7 @@ import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.math.MathUtils;
 import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.physics.box2d.Body;
-import com.badlogic.gdx.physics.box2d.Filter;
 import com.erkan.zombienado2.graphics.Transform;
-import com.erkan.zombienado2.server.WorldManager;
 import com.badlogic.gdx.graphics.g2d.Animation;
 import com.erkan.zombienado2.server.misc.FilterConstants;
 import com.badlogic.gdx.graphics.Texture;
@@ -176,7 +174,7 @@ public class Zombie {
         float vol = (float)Math.max(0.1f, tmp);
         float pan = vec.setLength(1f).x;
 
-        SoundManager.addSound(splatter, splatter.play(vol, 1, pan));
+        SoundManager.playSound(splatter, vol, 1, pan);
         //END OF SOUND STUFF
 
         for (int i = 0; i < guts_parts.length; i++){

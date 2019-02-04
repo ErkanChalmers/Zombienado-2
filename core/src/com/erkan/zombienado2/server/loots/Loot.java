@@ -1,8 +1,7 @@
 package com.erkan.zombienado2.server.loots;
 
-import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.physics.box2d.Body;
-import com.badlogic.gdx.physics.box2d.Filter;
+import com.erkan.zombienado2.server.Action;
 import com.erkan.zombienado2.server.PlayerModel;
 import com.erkan.zombienado2.server.WorldManager;
 import com.erkan.zombienado2.server.misc.FilterConstants;
@@ -10,7 +9,7 @@ import com.erkan.zombienado2.server.misc.FilterConstants;
 /**
  * Created by Erik on 2018-09-13.
  */
-public abstract class Loot {
+public abstract class Loot implements Action {
     private Body body;
     boolean alive;
     boolean isStatic = true;
@@ -43,6 +42,7 @@ public abstract class Loot {
     }
 
     public abstract void pickup(PlayerModel player);
+    public abstract void leave(PlayerModel player);
 
     public void destroy(){
         if (body != null){

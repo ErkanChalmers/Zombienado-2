@@ -1,7 +1,6 @@
 package com.erkan.zombienado2.client;
 
 import com.badlogic.gdx.Gdx;
-import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.Pixmap;
 import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.g2d.BitmapFont;
@@ -10,8 +9,6 @@ import com.badlogic.gdx.graphics.g2d.Sprite;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.math.MathUtils;
 import com.badlogic.gdx.math.Vector2;
-import com.badlogic.gdx.scenes.scene2d.utils.ClickListener;
-import com.erkan.zombienado2.client.utils.GraphicsUtils;
 import com.erkan.zombienado2.data.weapons.WeaponData;
 import com.erkan.zombienado2.graphics.Transform;
 
@@ -41,7 +38,7 @@ public class TeamMate extends Player {
 
         if (dir.len() != 0 && elapsed_step > .25f) {
             int i = MathUtils.random(walk_sound.length-1);
-            SoundManager.addSound(walk_sound[i], walk_sound[i].play(vol, 1, pan));
+            SoundManager.playSound(walk_sound[i], vol, 1, pan);
             elapsed_step = 0;
         }
         elapsed_step+= Gdx.graphics.getDeltaTime();
@@ -59,7 +56,7 @@ public class TeamMate extends Player {
         float vol = (float)Math.max(0.1f, tmp);
         float pan = vec.setLength(1f).x;
 
-        SoundManager.addSound(getWeapon().getSound(), getWeapon().getSound().play(vol, 1, pan));
+        SoundManager.playSound(getWeapon().getSound(), vol, 1, pan);
     }
 
     @Override
@@ -73,7 +70,7 @@ public class TeamMate extends Player {
 
         float vol = (float)Math.max(0.1f, tmp);
         float pan = vec.setLength(1f).x;
-        SoundManager.addSound(getWeapon().getReloadSound(), getWeapon().getReloadSound().play(vol, 1, pan));
+        SoundManager.playSound(getWeapon().getReloadSound(), vol, 1, pan);
     }
 
 
@@ -88,7 +85,7 @@ public class TeamMate extends Player {
 
         float vol = (float)Math.max(0.1f, tmp);
         float pan = vec.setLength(1f).x;
-        SoundManager.addSound(change_weapon, change_weapon.play(vol, 1, pan));
+        SoundManager.playSound(change_weapon, vol, 1, pan);
         return true;
     }
 

@@ -20,7 +20,7 @@ public class Self extends Player {
         super.run(dir);
         if (dir.len() != 0 && elapsed_step > .25f) {
             int i = MathUtils.random(walk_sound.length-1);
-            SoundManager.addSound(walk_sound[i], walk_sound[i].play());
+            SoundManager.playSound(walk_sound[i]);
             elapsed_step = 0;
         }
         elapsed_step+= Gdx.graphics.getDeltaTime();
@@ -30,20 +30,33 @@ public class Self extends Player {
     public void shoot(){
         super.shoot();
         float pitch = 1 + ((float)Math.random() - 0.5f)*0.1f;
-        SoundManager.addSound(getWeapon().getSound(), getWeapon().getSound().play(1, pitch, 0));
+        SoundManager.playSound(getWeapon().getSound(), 1, pitch, 0);
     }
 
     @Override
     public void reload(){
         super.reload();
-        SoundManager.addSound(getWeapon().getReloadSound(), getWeapon().getReloadSound().play());
+        SoundManager.playSound(getWeapon().getReloadSound());
 
     }
 
     @Override
     public boolean setWeapon(WeaponData wd){
         if (!super.setWeapon(wd)) return false;
-        SoundManager.addSound(change_weapon, change_weapon.play());
+        SoundManager.playSound(change_weapon);
         return true;
+    }
+
+    @Override
+    public void setAlive(boolean alive){
+        if (super.alive && !alive){
+            NotificationManager.post("You are dead");
+        }
+
+        if (!super.alive && alive){
+            NotificationManager.post("Your friends have rescued you");
+        }
+        super.setAlive(alive);
+
     }
 }

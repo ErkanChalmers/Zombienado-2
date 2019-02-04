@@ -1,6 +1,8 @@
 package com.erkan.zombienado2.client.world;
 
 import box2dLight.PointLight;
+import com.badlogic.gdx.Gdx;
+import com.badlogic.gdx.audio.Sound;
 import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.g2d.Sprite;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
@@ -17,6 +19,7 @@ import com.erkan.zombienado2.server.misc.FilterConstants;
  */
 public class TV extends DynamicObject implements Solid{
     private static final Texture tv_texture = new Texture("world/objects/objects_house_0021_Layer-22.png");
+    private static final Sound tv_sound = Gdx.audio.newSound(Gdx.files.internal("audio/zombietvmp3.mp3"));
     private StaticRectangle rectangle;
 
     Sprite sprite;
@@ -24,6 +27,7 @@ public class TV extends DynamicObject implements Solid{
 
     public TV(float x, float y, float r){
         super(x, y, r);
+        new SoundSource(Transform.to_screen_space(x), Transform.to_screen_space(y), Transform.to_screen_space(5), tv_sound);
         rectangle = new StaticRectangle(x, y, 1, 1, r);
         sprite = new Sprite(tv_texture);
         sprite.setSize(Transform.to_screen_space(1f), Transform.to_screen_space(1f));
